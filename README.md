@@ -24,7 +24,7 @@ nvcl_obj = NVCLKit(param_obj)
 
 ```python
 if not nvcl_obj.wfs:
-   print("ERROR!")
+    print("ERROR!")
 ```
 
 **3. Call get_boreholes_list() to get list of NVCL boreholes**
@@ -58,10 +58,10 @@ HEIGHT_RESOLUTION = 20.0
 ANALYSIS_CLASS = 'Grp1 uTSAS'
 LOG_TYPE = '1'
 for log_id, log_type, log_name in log_id_list:
-   if log_type == LOG_TYPE and log_name == ANALYSIS_CLASS:
-       bh_data = nvcl_obj.get_borehole_data(log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)_
-       # Print out the colour, mineral and class name at each depth
-       for depth in bh_data:
-           print("At ", depth, "my class, mineral, colour is", bh_data[depth]['className'], bh_data[depth]['classText'],
-                 bh_data[depth]['colour'])
+    if log_type == LOG_TYPE and log_name == ANALYSIS_CLASS:
+        bh_data = nvcl_obj.get_borehole_data(log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)_
+        # Print out the colour, mineral and class name at each depth
+        for depth in bh_data:
+            print("At ", depth, "my class, mineral, colour is", bh_data[depth]['className'],
+                  bh_data[depth]['classText'], bh_data[depth]['colour'])
 ```
