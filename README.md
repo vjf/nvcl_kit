@@ -12,7 +12,6 @@ How to extract NVCL borehole data:
 from nvcl_kit import NVCLKit
 param_obj = {
     "BBOX": { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 },
-    "MODEL_CRS": "EPSG:28352",
     "WFS_URL": "http://blah.blah.blah/nvcl/geoserver/wfs",
     "BOREHOLE_CRS": "EPSG:4283",
     "WFS_VERSION": "1.1.0",
