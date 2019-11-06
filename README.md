@@ -1,6 +1,6 @@
 # pynvcl
 
-#### A simple module used to extract NVCL borehole data
+#### A simple module used to extract Australian NVCL borehole data
 
 Requires:  [owslib](https://github.com/geopython/OWSLib)
 
@@ -30,17 +30,18 @@ if not nvcl_obj.wfs:
 **3. Call get_boreholes_list() to get list of NVCL boreholes**
 
 ```python
-max_boreholes = 20
+MAX_BOREHOLES = 20
 bh_list = nvcl_obj.get_boreholes_list(max_boreholes)
 ```
 
 **4. Call get_borehole_logids() to get logids**
 
 ```python
+# Construct a list of NVCL ids
 nvcl_id_list = [bh['nvcl_id'] for bh in bh_list]
 # Get logids for first borehole in list
 nvcl_id = nvcl_id_list[0]
-log_id_list = nvcl_obj.get_borehole_logids[nvcl_id]
+log_id_list = nvcl_obj.get_borehole_logids(nvcl_id)
 ```
 
 **5. Call get_borehole_data() to get borehole data**
