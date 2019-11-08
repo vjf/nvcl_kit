@@ -293,7 +293,7 @@ class NVCLKit:
                    self.param_obj.BBOX['south'] < borehole_dict['y']:
                     borehole_cnt += 1
                     borehole_list.append(borehole_dict)
-                if borehole_cnt > max_boreholes:
+                if borehole_cnt >= max_boreholes:
                     break
         LOGGER.debug('get_boreholes_list() returns %s', str(borehole_list))
         return borehole_list
