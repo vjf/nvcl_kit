@@ -7,6 +7,8 @@ import sys, os
 sys.path.append(os.path.join('..', 'nvcl_kit'))
 from nvcl_kit import NVCLKit
 
+MAX_BOREHOLES = 20
+
 class TestNVCLKit(unittest.TestCase):
     def setup_param_obj(self):
         param_obj = SimpleNamespace()
@@ -15,6 +17,7 @@ class TestNVCLKit(unittest.TestCase):
         setattr(param_obj, "BOREHOLE_CRS", "EPSG:4283")
         setattr(param_obj, "WFS_VERSION", "1.1.0")
         setattr(param_obj, "NVCL_URL", "https://blah.blah.blah/nvcl/NVCLDataServices")
+        setattr(param_obj, "MAX_BOREHOLES", MAX_BOREHOLES)
         return param_obj
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
@@ -28,7 +31,7 @@ class TestNVCLKit(unittest.TestCase):
                 wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str
                 param_obj = self.setup_param_obj()
                 kit = NVCLKit(param_obj)
-                l = kit.get_boreholes_list(20)
+                l = kit.get_boreholes_list()
                 self.assertEqual(l, [])
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
@@ -43,8 +46,8 @@ class TestNVCLKit(unittest.TestCase):
                 wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
                 param_obj = self.setup_param_obj()
                 kit = NVCLKit(param_obj)
-                l = kit.get_boreholes_list(20)
-                self.assertEqual(len(l), 20)
+                l = kit.get_boreholes_list()
+                self.assertEqual(len(l), MAX_BOREHOLES)
 
 
 if __name__ == '__main__':
