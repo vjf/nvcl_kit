@@ -229,6 +229,9 @@ class NVCLKit:
     def get_boreholes_list(self):
         return self.borehole_list  
 
+    def get_nvcl_id_list(self):
+        return [bh['nvcl_id'] for bh in self.borehole_list]
+
     def fetch_borehole_list(self, max_boreholes):
         ''' Returns a list of WFS borehole data within bounding box, but only NVCL boreholes
             [ { 'nvcl_id': XXX, 'x': XXX, 'y': XXX, 'href': XXX, ... }, { ... } ]
