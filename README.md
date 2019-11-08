@@ -10,13 +10,13 @@ How to extract NVCL borehole data:
 
 ```python
 from nvcl_kit import NVCLKit
-param_obj = {
-    "BBOX": { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 },
-    "WFS_URL": "http://blah.blah.blah/nvcl/geoserver/wfs",
-    "BOREHOLE_CRS": "EPSG:4283",
-    "WFS_VERSION": "1.1.0",
-    "NVCL_URL": "https://blah.blah.blah/nvcl/NVCLDataServices"
-}
+from types import SimpleNamespace
+param_obj = SimpleNamespace()
+setattr(param_obj, "BBOX", { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 })
+setattr(param_obj, "WFS_URL", "http://blah.blah.blah/nvcl/geoserver/wfs")
+setattr(param_obj, "BOREHOLE_CRS", "EPSG:4283")
+setattr(param_obj, "WFS_VERSION", "1.1.0")
+setattr(param_obj, "NVCL_URL", "https://blah.blah.blah/nvcl/NVCLDataServices")
 nvcl_obj = NVCLKit(param_obj)
 ```
 
@@ -31,7 +31,7 @@ if not nvcl_obj.wfs:
 
 ```python
 MAX_BOREHOLES = 20
-bh_list = nvcl_obj.get_boreholes_list(max_boreholes)
+bh_list = nvcl_obj.get_boreholes_list(MAX_BOREHOLES)
 ```
 
 **4. Call get_borehole_logids() to get logids**
@@ -60,7 +60,7 @@ ANALYSIS_CLASS = 'Grp1 uTSAS'
 LOG_TYPE = '1'
 for log_id, log_type, log_name in log_id_list:
     if log_type == LOG_TYPE and log_name == ANALYSIS_CLASS:
-        bh_data = nvcl_obj.get_borehole_data(log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)_
+        bh_data = nvcl_obj.get_borehole_data(log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
         # Print out the colour, mineral and class name at each depth
         for depth in bh_data:
             print("At ", depth, "my class, mineral, colour is", bh_data[depth]['className'],
