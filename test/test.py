@@ -48,6 +48,8 @@ class TestNVCLKit(unittest.TestCase):
                 kit = NVCLKit(param_obj)
                 l = kit.get_boreholes_list()
                 self.assertEqual(len(l), MAX_BOREHOLES)
+                l = kit.get_nvcl_id_list()
+                self.assertEqual(len(l), MAX_BOREHOLES)
 
 
 if __name__ == '__main__':

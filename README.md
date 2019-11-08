@@ -17,6 +17,7 @@ setattr(param_obj, "WFS_URL", "http://blah.blah.blah/nvcl/geoserver/wfs")
 setattr(param_obj, "BOREHOLE_CRS", "EPSG:4283")
 setattr(param_obj, "WFS_VERSION", "1.1.0")
 setattr(param_obj, "NVCL_URL", "https://blah.blah.blah/nvcl/NVCLDataServices")
+setattr(param_obj, "MAX_BOREHOLES", 20)
 nvcl_obj = NVCLKit(param_obj)
 ```
 
@@ -30,15 +31,14 @@ if not nvcl_obj.wfs:
 **3. Call get_boreholes_list() to get list of NVCL boreholes**
 
 ```python
-MAX_BOREHOLES = 20
-bh_list = nvcl_obj.get_boreholes_list(MAX_BOREHOLES)
+bh_list = nvcl_obj.get_boreholes_list()
 ```
 
 **4. Call get_borehole_logids() to get logids**
 
 ```python
-# Construct a list of NVCL ids
-nvcl_id_list = [bh['nvcl_id'] for bh in bh_list]
+# Get list of NVCL ids
+nvcl_id_list = nvcl_obj.get_nvcl_id_list()
 # Get logids for first borehole in list
 nvcl_id = nvcl_id_list[0]
 log_id_list = nvcl_obj.get_borehole_logids(nvcl_id)
