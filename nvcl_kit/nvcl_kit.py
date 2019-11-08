@@ -97,16 +97,16 @@ class NVCLKit:
 
     def __init__(self, param_obj, wfs=None):
         '''
-        :param param_obj: dictionary of parameters, fields are: NVCL_URL, WFS_URL, WFS_VERSION,
+        :param param_obj: Object with parameters, fields are: NVCL_URL, WFS_URL, WFS_VERSION,
                                                                 BOREHOLE_CRS, BBOX
         e.g.
-        {
-            "BBOX": { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 },
-            "WFS_URL": "http://blah.blah.blah/nvcl/geoserver/wfs",
-            "BOREHOLE_CRS": "EPSG:4283",
-            "WFS_VERSION": "1.1.0",
-            "NVCL_URL": "https://blah.blah.blah/nvcl/NVCLDataServices"
-        }
+        param_obj.BBOX = { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.BOREHOLE_CRS = "EPSG:4283"
+        param_obj.WFS_VERSION = "1.1.0"
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.MAX_BOREHOLES = 20
+
         :param wfs: optional owslib 'WebFeatureService' object
 
         NOTE: Check if 'wfs' is not 'None' to see if this instance initialised properly
@@ -114,6 +114,7 @@ class NVCLKit:
         '''
         self.param_obj = param_obj
         self.wfs = None
+        self.borehole_list = []
         if wfs is None:
             try:
                 self.wfs = WebFeatureService(self.param_obj.WFS_URL,
@@ -129,6 +130,8 @@ class NVCLKit:
                 LOGGER.warning("OS error: %s", str(os_exc))
         else:
             self.wfs = wfs
+        if not self.fetch_borehole_list(param_obj.MAX_BOREHOLES):
+            self.wfs = None
 
 
 
@@ -223,8 +226,10 @@ class NVCLKit:
                 logid_list.append([log_id, log_type, log_name])
         return logid_list
 
+    def get_boreholes_list(self):
+        return self.borehole_list  
 
-    def get_boreholes_list(self, max_boreholes):
+    def fetch_borehole_list(self, max_boreholes):
         ''' Returns a list of WFS borehole data within bounding box, but only NVCL boreholes
             [ { 'nvcl_id': XXX, 'x': XXX, 'y': XXX, 'href': XXX, ... }, { ... } ]
 
@@ -245,7 +250,7 @@ class NVCLKit:
             response_str = bytes(response.read(), 'ascii')
         except (RequestException, HTTPException, ServiceException, OSError) as exc:
             LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
-            return []
+            return False
         borehole_list = []
         LOGGER.debug('get_boreholes_list() resp= %s', response_str)
         borehole_cnt = 0
@@ -292,8 +297,8 @@ class NVCLKit:
                    self.param_obj.BBOX['north'] > borehole_dict['y'] and \
                    self.param_obj.BBOX['south'] < borehole_dict['y']:
                     borehole_cnt += 1
-                    borehole_list.append(borehole_dict)
+                    self.borehole_list.append(borehole_dict)
                 if borehole_cnt >= max_boreholes:
                     break
-        LOGGER.debug('get_boreholes_list() returns %s', str(borehole_list))
-        return borehole_list
+        LOGGER.debug('get_boreholes_list() returns True')
+        return True
