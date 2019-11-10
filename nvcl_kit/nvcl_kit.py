@@ -130,7 +130,7 @@ class NVCLKit:
                 LOGGER.warning("OS error: %s", str(os_exc))
         else:
             self.wfs = wfs
-        if not self.fetch_borehole_list(param_obj.MAX_BOREHOLES):
+        if not self._fetch_borehole_list(param_obj.MAX_BOREHOLES):
             self.wfs = None
 
 
@@ -232,7 +232,7 @@ class NVCLKit:
     def get_nvcl_id_list(self):
         return [bh['nvcl_id'] for bh in self.borehole_list]
 
-    def fetch_borehole_list(self, max_boreholes):
+    def _fetch_borehole_list(self, max_boreholes):
         ''' Returns a list of WFS borehole data within bounding box, but only NVCL boreholes
             [ { 'nvcl_id': XXX, 'x': XXX, 'y': XXX, 'href': XXX, ... }, { ... } ]
 
@@ -301,7 +301,7 @@ class NVCLKit:
                    self.param_obj.BBOX['south'] < borehole_dict['y']:
                     borehole_cnt += 1
                     self.borehole_list.append(borehole_dict)
-                if borehole_cnt >= max_boreholes:
+                if max_boreholes > 0 and borehole_cnt >= max_boreholes:
                     break
         LOGGER.debug('get_boreholes_list() returns True')
         return True
