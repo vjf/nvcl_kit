@@ -12,12 +12,12 @@ How to extract NVCL borehole data:
 from nvcl_kit import NVCLKit
 from types import SimpleNamespace
 param_obj = SimpleNamespace()
-setattr(param_obj, "BBOX", { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 })
-setattr(param_obj, "WFS_URL", "http://blah.blah.blah/nvcl/geoserver/wfs")
-setattr(param_obj, "BOREHOLE_CRS", "EPSG:4283")
-setattr(param_obj, "WFS_VERSION", "1.1.0")
-setattr(param_obj, "NVCL_URL", "https://blah.blah.blah/nvcl/NVCLDataServices")
-setattr(param_obj, "MAX_BOREHOLES", 20)
+param_obj.BBOX = {"west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
+param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+param_obj.BOREHOLE_CRS = "EPSG:4283"
+param_obj.WFS_VERSION = "1.1.0"
+param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+param_obj.MAX_BOREHOLES = 20
 nvcl_obj = NVCLKit(param_obj)
 ```
 
