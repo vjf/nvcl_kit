@@ -12,12 +12,12 @@ MAX_BOREHOLES = 20
 class TestNVCLKit(unittest.TestCase):
     def setup_param_obj(self, max_boreholes):
         param_obj = SimpleNamespace()
-        setattr(param_obj, "BBOX", {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0})
-        setattr(param_obj, "WFS_URL", "http://blah.blah.blah/nvcl/geoserver/wfs")
-        setattr(param_obj, "BOREHOLE_CRS", "EPSG:4283")
-        setattr(param_obj, "WFS_VERSION", "1.1.0")
-        setattr(param_obj, "NVCL_URL", "https://blah.blah.blah/nvcl/NVCLDataServices")
-        setattr(param_obj, "MAX_BOREHOLES", max_boreholes)
+        param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.BOREHOLE_CRS = "EPSG:4283"
+        param_obj.WFS_VERSION = "1.1.0"
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.MAX_BOREHOLES = max_boreholes
         return param_obj
 
 
@@ -73,13 +73,20 @@ class TestNVCLKit(unittest.TestCase):
    
 
     @unittest.mock.patch('nvcl_kit.urllib', autospec=True)
-    def test_borehole_logids(self, mock_urllib):
+    def test_imagelog_data(self, mock_urllib):
         request_obj = mock_urllib.return_value
         request_obj.request.return_value = Mock()
         request_obj.request.return_value.url_open.return_value = Mock()
+        self.assertEqual(0,0)
         # TODO: Complete this
-        request_obj.request.return_value.url_open.return_value.read.return_value = "some XML string"
-        self.assertEqual(0,0) 
+        #with open('dataset_coll.txt') as fp:
+        #    ds_coll_resp_list = fp.readlines()
+        #    ds_coll_resp_str = ''.join(wfs_resp_list)
+        #    request_obj.request.return_value.url_open.return_value.read.return_value = ds_coll_resp_str 
+        #    param_obj = self.setup_param_obj(0)
+        #    kit = NVCLKit(param_obj)
+        #    nvcl_list = kit.get_nvcl_id_list()
+        #    image_data_list = kit.get_imagelog_data(nvcl_list[0])
         
     # TODO: Test receiving borehole data
 

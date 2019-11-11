@@ -9,6 +9,7 @@ import json
 from collections import OrderedDict
 import itertools
 import logging
+from types import SimpleNamespace
 
 import urllib
 import urllib.parse
@@ -194,8 +195,8 @@ class NVCLKit:
         return depth_dict
 
 
-    def get_borehole_logids(self, nvcl_id):
-        ''' Retrieves a set of log ids for a particular borehole
+    def get_imagelog_data(self, nvcl_id):
+        ''' Retrieves a set of image log data for a particular borehole
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
@@ -223,8 +224,78 @@ class NVCLKit:
             log_type = child.findtext('./logType', default='')
             log_id = child.findtext('./LogID', default='')
             if is_public == 'true' and log_name != '' and log_type != '' and log_id != '':
-                logid_list.append([log_id, log_type, log_name])
+                logid_list.append(SimpleNamespace(log_id=log_id, log_type=log_type, log_name=log_name))
         return logid_list
+
+
+    def get_spectrallog_data(self, nvcl_id):
+        ''' Retrieves a set of spectral log data for a particular borehole
+
+        :param nvcl_id: NVCL 'holeidentifier' parameter,
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
+        :returns: a list of [log id, log type, log name]
+        '''
+        url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
+        params = {'holeidentifier' : nvcl_id}
+        enc_params = urllib.parse.urlencode(params).encode('ascii')
+        req = urllib.request.Request(url, enc_params)
+        response_str = b''
+        try:
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
+                response_str = response.read()
+        except HTTPException as he_exc:
+            LOGGER.warning('HTTP Error: %s', str(he_exc))
+            return []
+        except OSError as os_exc:
+            LOGGER.warning('OS error: %s', str(os_exc))
+            return []
+        root = ET.fromstring(response_str)
+        logid_list = []
+        for child in root.findall('./*/SpectralLogs/SpectralLog'):
+            log_id = child.findtext('./logID', default='')
+            log_name = child.findtext('./logName', default='')
+            wavelength_units = child.findtext('./wavelengthUnits', default='')
+            sample_count = child.findtext('./sampleCount', default='')
+            script = child.findtext('./script', default='')
+            wavelengths = child.findtext('./wavelengths', default='')
+            logid_list.append(SimpleNamepace(log_id=log_id, log_name=log_name, wavelength_units=wavelength_units, sample_count=sample_count, script=script, wavelengths=wavelengths))
+        return logid_list
+
+
+        ''' Retrieves a set of profileometer logs for a particular borehole
+
+        :param nvcl_id: NVCL 'holeidentifier' parameter,
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
+        :returns: a list of [log id, log type, log name]
+        '''
+        url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
+        params = {'holeidentifier' : nvcl_id}
+        enc_params = urllib.parse.urlencode(params).encode('ascii')
+        req = urllib.request.Request(url, enc_params)
+        response_str = b''
+        try:
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
+                response_str = response.read()
+        except HTTPException as he_exc:
+            LOGGER.warning('HTTP Error: %s', str(he_exc))
+            return []
+        except OSError as os_exc:
+            LOGGER.warning('OS error: %s', str(os_exc))
+            return []
+        root = ET.fromstring(response_str)
+        logid_list = []
+        for child in root.findall('./*/ProfileometerLogs/ProfLog'):
+            log_id = child.findtext('./LogID', default='')
+            log_name = child.findtext('./logName', default='')
+            sample_count = child.findtext('./sampleCount', default='')
+            floats_per_sample = child.findtext('./floatsPerSample', default='')
+            min_val = child.findtext('./minVal', default='')
+            max_val = child.findtext('./maxVal', default='')
+            logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, sample_count=sample_count, floats_per_sample=floats_per_sample, min_val=min_val, max_val=max_val))
+        return logid_list
+
+
+
 
     def get_boreholes_list(self):
         return self.borehole_list  
