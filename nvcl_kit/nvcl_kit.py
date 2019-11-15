@@ -321,7 +321,7 @@ class NVCLKit:
         response_str = ''
         try:
             response = self.wfs.getfeature(typename='gsmlp:BoreholeView', filter=filterxml)
-            response_str = bytes(response.read(), 'ascii')
+            response_str = bytes(response.read(), encoding='ascii')
         except (RequestException, HTTPException, ServiceException, OSError) as exc:
             LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
             return False
