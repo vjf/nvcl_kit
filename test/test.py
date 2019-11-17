@@ -70,9 +70,8 @@ class TestNVCLKit(unittest.TestCase):
             self.assertEqual(len(l), 102)
             l = kit.get_nvcl_id_list()
             self.assertEqual(len(l), 102)
-   
 
-    def test_imagelog_data(self):
+    def setup_kit(self):
         kit = None
         with unittest.mock.patch('nvcl_kit.WebFeatureService') as mock_wfs:
             wfs_obj = mock_wfs.return_value
@@ -83,16 +82,45 @@ class TestNVCLKit(unittest.TestCase):
                 wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
                 param_obj = self.setup_param_obj(0)
                 kit = NVCLKit(param_obj)
+        return kit
+   
+
+    def test_imagelog_data(self):
+        kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 resp_list = fp.readlines()
                 resp_str = ''.join(resp_list)
                 open_obj.__enter__.return_value.read.return_value = resp_str 
-                image_data_list = kit.get_imagelog_data("blah")
-                self.assertTrue(len(image_data_list), 5)
+                imagelog_data_list = kit.get_imagelog_data("blah")
+                self.assertEqual(len(imagelog_data_list), 5)
         
-    # TODO: Test receiving borehole data
+
+    def test_profileometer_data(self):
+        kit = self.setup_kit()
+        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+            open_obj = mock_request.return_value
+            with open('dataset_coll.txt') as fp:
+                resp_list = fp.readlines()
+                resp_str = ''.join(resp_list)
+                open_obj.__enter__.return_value.read.return_value = resp_str 
+                prof_data_list = kit.get_profileometer_data("blah")
+                self.assertEqual(len(prof_data_list), 1)
+
+        
+    def test_spectrallog_data(self):
+        kit = self.setup_kit()
+        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+            open_obj = mock_request.return_value
+            with open('dataset_coll.txt') as fp:
+                resp_list = fp.readlines()
+                resp_str = ''.join(resp_list)
+                open_obj.__enter__.return_value.read.return_value = resp_str 
+                spectral_data_list = kit.get_spectrallog_data("blah")
+                self.assertEqual(len(spectral_data_list), 15)
+        
+
 
 if __name__ == '__main__':
     unittest.main()
