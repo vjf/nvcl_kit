@@ -200,7 +200,8 @@ class NVCLKit:
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
-        :returns: a list of [log id, log type, log name]
+        :returns: a list of SimpleNamespace() objects with attributes:
+                  log_id, log_type, log_name
         '''
         url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
         params = {'holeidentifier' : nvcl_id}
@@ -233,7 +234,9 @@ class NVCLKit:
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
-        :returns: a list of [log id, log type, log name]
+        :returns: a list of SimpleNamespace() objects with attributes:
+                  log_id, log_name, wavelength_units, sample_count, script,
+                  wavelengths
         '''
         url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
         params = {'holeidentifier' : nvcl_id}
@@ -258,15 +261,18 @@ class NVCLKit:
             sample_count = child.findtext('./sampleCount', default='')
             script = child.findtext('./script', default='')
             wavelengths = child.findtext('./wavelengths', default='')
-            logid_list.append(SimpleNamepace(log_id=log_id, log_name=log_name, wavelength_units=wavelength_units, sample_count=sample_count, script=script, wavelengths=wavelengths))
+            logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, wavelength_units=wavelength_units, sample_count=sample_count, script=script, wavelengths=wavelengths))
         return logid_list
 
 
+    def get_profileometer_data(self, nvcl_id):
         ''' Retrieves a set of profileometer logs for a particular borehole
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
-        :returns: a list of [log id, log type, log name]
+        :returns: a list of SimpleNamespace() objects with attributes:
+                  log_id, log_name, sample_count, floats_per_sample, 
+                  min_val, max_val
         '''
         url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
         params = {'holeidentifier' : nvcl_id}
@@ -284,7 +290,7 @@ class NVCLKit:
             return []
         root = ET.fromstring(response_str)
         logid_list = []
-        for child in root.findall('./*/ProfileometerLogs/ProfLog'):
+        for child in root.findall('./*/ProfilometerLogs/ProfLog'):
             log_id = child.findtext('./LogID', default='')
             log_name = child.findtext('./logName', default='')
             sample_count = child.findtext('./sampleCount', default='')
