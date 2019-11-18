@@ -142,7 +142,7 @@ class NVCLKit:
                 LOGGER.warning("OS error: %s", str(os_exc))
         else:
             self.wfs = wfs
-        if not self._fetch_borehole_list(param_obj.MAX_BOREHOLES):
+        if self.wfs and not self._fetch_borehole_list(param_obj.MAX_BOREHOLES):
             self.wfs = None
 
 

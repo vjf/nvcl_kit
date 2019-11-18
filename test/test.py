@@ -28,6 +28,29 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def _wfs_exception_tester(self, mock_wfs, excep, msg):
+        mock_wfs.side_effect = excep
+        wfs_obj = mock_wfs.return_value
+        wfs_obj.getfeature.return_value = Mock()
+        wfs_obj.getfeature.return_value.read.side_effect = excep
+        with self.assertLogs('nvcl_kit', level='WARN') as nvcl_log:
+            param_obj = self.setup_param_obj(MAX_BOREHOLES)
+            kit = NVCLKit(param_obj)
+            self.assertIn(msg, nvcl_log.output[0])
+            self.assertEqual(kit.wfs, None)
+
+
+    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    def test_exception_wfs(self, mock_wfs):
+        #
+        # Tests that can handle exceptions in WebFeatureService function
+        #
+        self._wfs_exception_tester(mock_wfs, ServiceException, 'WFS error:')
+        self._wfs_exception_tester(mock_wfs, RequestException, 'Request error:')
+        self._wfs_exception_tester(mock_wfs, HTTPException, 'HTTP error code returned:')
+        self._wfs_exception_tester(mock_wfs, OSError, 'OS error:')
+
+
+    def _wfs_read_exception_tester(self, mock_wfs, excep, msg):
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
         wfs_obj.getfeature.return_value.read.side_effect = excep
@@ -36,15 +59,16 @@ class TestNVCLKit(unittest.TestCase):
             kit = NVCLKit(param_obj)
             l = kit.get_boreholes_list()
             self.assertIn(msg, nvcl_log.output[0])
+            self.assertEqual(kit.wfs, None)
 
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
-    def test_exception_wfs_timeout(self, mock_wfs):
+    def test_exception_getfeature_read(self, mock_wfs):
         #
         # Tests that can handle exceptions in getfeature's read() function
         #
         for excep in [Timeout, RequestException, HTTPException, ServiceException, OSError]:
-            self._wfs_exception_tester(mock_wfs, excep, 'WFS GetFeature failed')
+            self._wfs_read_exception_tester(mock_wfs, excep, 'WFS GetFeature failed')
 
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
