@@ -10,6 +10,7 @@ from nvcl_kit import NVCLKit
 MAX_BOREHOLES = 20
 
 class TestNVCLKit(unittest.TestCase):
+
     def setup_param_obj(self, max_boreholes):
         param_obj = SimpleNamespace()
         param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
@@ -23,10 +24,11 @@ class TestNVCLKit(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_empty_wfs(self, mock_wfs):
+        #
+        # Test empty but valid WFS response
+        #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
-
-        # Test empty but valid response
         with open('empty_wfs.txt') as fp:
             wfs_resp_str = fp.readline()
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str
@@ -38,10 +40,11 @@ class TestNVCLKit(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_max_bh_wfs(self, mock_wfs):
+        #
+        # Test full WFS response, maximum number of boreholes is enforced
+        #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
-
-        # Test full response, maximum number of boreholes is enforced
         with open('full_wfs3.txt') as fp:
             wfs_resp_list = fp.readlines()
             wfs_resp_str = ''.join(wfs_resp_list)
@@ -56,10 +59,11 @@ class TestNVCLKit(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_all_bh_wfs(self, mock_wfs):
+        #
+        # Test full WFS response, unlimited number of boreholes
+        #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
-
-        # Test full response, unlimited number of boreholes
         with open('full_wfs3.txt') as fp:
             wfs_resp_list = fp.readlines()
             wfs_resp_str = ''.join(wfs_resp_list)
@@ -70,6 +74,7 @@ class TestNVCLKit(unittest.TestCase):
             self.assertEqual(len(l), 102)
             l = kit.get_nvcl_id_list()
             self.assertEqual(len(l), 102)
+
 
     def setup_kit(self):
         kit = None
@@ -86,6 +91,9 @@ class TestNVCLKit(unittest.TestCase):
    
 
     def test_imagelog_data(self):
+        #
+        # Test get_imagelog_data()
+        #
         kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
@@ -97,7 +105,10 @@ class TestNVCLKit(unittest.TestCase):
                 self.assertEqual(len(imagelog_data_list), 5)
         
 
-    def test_profileometer_data(self):
+    def test_profilometer_data(self):
+        #
+        # Test get_profilometer_data()
+        #
         kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
@@ -105,11 +116,14 @@ class TestNVCLKit(unittest.TestCase):
                 resp_list = fp.readlines()
                 resp_str = ''.join(resp_list)
                 open_obj.__enter__.return_value.read.return_value = resp_str 
-                prof_data_list = kit.get_profileometer_data("blah")
+                prof_data_list = kit.get_profilometer_data("blah")
                 self.assertEqual(len(prof_data_list), 1)
 
         
     def test_spectrallog_data(self):
+        #
+        # Test get_spectrallog_data()
+        #
         kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
@@ -119,7 +133,9 @@ class TestNVCLKit(unittest.TestCase):
                 open_obj.__enter__.return_value.read.return_value = resp_str 
                 spectral_data_list = kit.get_spectrallog_data("blah")
                 self.assertEqual(len(spectral_data_list), 15)
-        
+
+    # get_borehole_data        
+    # get_boreholes_list ?
 
 
 if __name__ == '__main__':

@@ -90,17 +90,28 @@ def bgr2rgba(bgr):
 
 class NVCLKit:
     ''' A class to extract NVCL borehole data:
-    (1) Instantiate class
-    (2) Call get_boreholes_list() to get list of NVCL boreholes
-    (3) Call get_borehole_logids() to get logids
-    (4) Call get_borehole_data() to get borehole data
+    (1) Instantiate class (see constructor description)
+    (2) Call get_boreholes_list() to get list of NVCL borehole data
+    (3) Call get_borehole_data() to get borehole data
+        OR call get_profilometer_data()
+        OR call get_spectrallog_data()
+        OR call get_imagelog_data()
+    OR
+    (1) Instantiate class (see constructor description)
+    (2) Call get_nvcl_id_list() get list of NVCL ids
+    (3) Call get_profilometer_data()
+        OR call get_spectrallog_data()
+        OR call get_imagelog_data()
     '''
 
     def __init__(self, param_obj, wfs=None):
         '''
-        :param param_obj: Object with parameters, fields are: NVCL_URL, WFS_URL, WFS_VERSION,
-                                                                BOREHOLE_CRS, BBOX
+        :param param_obj: SimpleNamespace() object with parameters
+        Fields are: NVCL_URL, WFS_URL, WFS_VERSION, BOREHOLE_CRS, BBOX 
+                    & MAX_BOREHOLES
         e.g.
+        from types import SimpleNamespace
+        param_obj = SimpleNamespace()
         param_obj.BBOX = { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
         param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
         param_obj.BOREHOLE_CRS = "EPSG:4283"
@@ -135,13 +146,12 @@ class NVCLKit:
             self.wfs = None
 
 
-
     def get_borehole_data(self, log_id, height_resol, class_name):
         ''' Retrieves borehole mineral data for a borehole
 
         :param log_id: borehole log identifier, string e.g. 'ce2df1aa-d3e7-4c37-97d5-5115fc3c33d'
                        This is the first id from the list of triplets [log id, log type, log name]
-                       fetched from 'get_borehole_logids()'
+                       fetched from 'get_imagelog_data()'
         :param height_resol: height resolution, float
         :param class_name: name of mineral class
         :returns: a dict: key - depth, float; value - { 'colour': RGB colour string,
@@ -195,13 +205,12 @@ class NVCLKit:
         return depth_dict
 
 
-    def get_imagelog_data(self, nvcl_id):
-        ''' Retrieves a set of image log data for a particular borehole
+    def _get_dataset_collection(self, nvcl_id):
+        ''' Retrieves a dataset for a particular borehole
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
-        :returns: a list of SimpleNamespace() objects with attributes:
-                  log_id, log_type, log_name
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :returns: the response as a byte string
         '''
         url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
         params = {'holeidentifier' : nvcl_id}
@@ -217,6 +226,18 @@ class NVCLKit:
         except OSError as os_exc:
             LOGGER.warning('OS error: %s', str(os_exc))
             return []
+        return response_str
+
+
+    def get_imagelog_data(self, nvcl_id):
+        ''' Retrieves a set of image log data for a particular borehole
+
+        :param nvcl_id: NVCL 'holeidentifier' parameter,
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :returns: a list of SimpleNamespace() objects with attributes:
+                  log_id, log_type, log_name
+        '''
+        response_str = self._get_dataset_collection(nvcl_id)
         root = ET.fromstring(response_str)
         logid_list = []
         for child in root.findall('./*/Logs/Log'):
@@ -233,25 +254,12 @@ class NVCLKit:
         ''' Retrieves a set of spectral log data for a particular borehole
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
         :returns: a list of SimpleNamespace() objects with attributes:
                   log_id, log_name, wavelength_units, sample_count, script,
                   wavelengths
         '''
-        url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
-        params = {'holeidentifier' : nvcl_id}
-        enc_params = urllib.parse.urlencode(params).encode('ascii')
-        req = urllib.request.Request(url, enc_params)
-        response_str = b''
-        try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
-                response_str = response.read()
-        except HTTPException as he_exc:
-            LOGGER.warning('HTTP Error: %s', str(he_exc))
-            return []
-        except OSError as os_exc:
-            LOGGER.warning('OS error: %s', str(os_exc))
-            return []
+        response_str = self._get_dataset_collection(nvcl_id)
         root = ET.fromstring(response_str)
         logid_list = []
         for child in root.findall('./*/SpectralLogs/SpectralLog'):
@@ -265,29 +273,16 @@ class NVCLKit:
         return logid_list
 
 
-    def get_profileometer_data(self, nvcl_id):
-        ''' Retrieves a set of profileometer logs for a particular borehole
+    def get_profilometer_data(self, nvcl_id):
+        ''' Retrieves a set of profilometer logs for a particular borehole
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
         :returns: a list of SimpleNamespace() objects with attributes:
                   log_id, log_name, sample_count, floats_per_sample, 
                   min_val, max_val
         '''
-        url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
-        params = {'holeidentifier' : nvcl_id}
-        enc_params = urllib.parse.urlencode(params).encode('ascii')
-        req = urllib.request.Request(url, enc_params)
-        response_str = b''
-        try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
-                response_str = response.read()
-        except HTTPException as he_exc:
-            LOGGER.warning('HTTP Error: %s', str(he_exc))
-            return []
-        except OSError as os_exc:
-            LOGGER.warning('OS error: %s', str(os_exc))
-            return []
+        response_str = self._get_dataset_collection(nvcl_id)
         root = ET.fromstring(response_str)
         logid_list = []
         for child in root.findall('./*/ProfilometerLogs/ProfLog'):
