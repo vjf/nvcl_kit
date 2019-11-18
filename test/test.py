@@ -26,6 +26,7 @@ class TestNVCLKit(unittest.TestCase):
     def test_empty_wfs(self, mock_wfs):
         #
         # Test empty but valid WFS response
+        # [ get_boreholes_list() & get_nvcl_id_list() ]
         #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
@@ -36,12 +37,15 @@ class TestNVCLKit(unittest.TestCase):
             kit = NVCLKit(param_obj)
             l = kit.get_boreholes_list()
             self.assertEqual(l, [])
+            l = kit.get_nvcl_id_list()
+            self.assertEqual(l, [])
 
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_max_bh_wfs(self, mock_wfs):
         #
         # Test full WFS response, maximum number of boreholes is enforced
+        # [ get_boreholes_list() & get_nvcl_id_list() ]
         #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
@@ -61,6 +65,7 @@ class TestNVCLKit(unittest.TestCase):
     def test_all_bh_wfs(self, mock_wfs):
         #
         # Test full WFS response, unlimited number of boreholes
+        # [ get_boreholes_list() & get_nvcl_id_list() ]
         #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
@@ -134,8 +139,20 @@ class TestNVCLKit(unittest.TestCase):
                 spectral_data_list = kit.get_spectrallog_data("blah")
                 self.assertEqual(len(spectral_data_list), 15)
 
-    # get_borehole_data        
-    # get_boreholes_list ?
+    def test_borehole_data(self):
+        #
+        # Test get_borehole_data()
+        #
+        kit = self.setup_kit()
+        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+            open_obj = mock_request.return_value
+            with open('bh_data.txt') as fp:
+                resp_list = fp.readlines()
+                resp_str = ''.join(resp_list)
+                open_obj.__enter__.return_value.read.return_value = bytes(resp_str, 'ascii') 
+                bh_data_list = kit.get_borehole_data("dummy-id", 10.0, "dummy-class")
+                self.assertEqual(len(bh_data_list), 28)
+    
 
 
 if __name__ == '__main__':
