@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
+import sys, os
 import unittest
 from unittest.mock import patch, Mock
+from requests.exceptions import Timeout, RequestException
+from owslib.util import ServiceException
+from http.client import HTTPException
+
 from types import SimpleNamespace
-import sys, os
 
 sys.path.append(os.path.join('..', 'nvcl_kit'))
 from nvcl_kit import NVCLKit
@@ -10,6 +14,7 @@ from nvcl_kit import NVCLKit
 MAX_BOREHOLES = 20
 
 class TestNVCLKit(unittest.TestCase):
+
 
     def setup_param_obj(self, max_boreholes):
         param_obj = SimpleNamespace()
@@ -22,11 +27,31 @@ class TestNVCLKit(unittest.TestCase):
         return param_obj
 
 
+    def _wfs_exception_tester(self, mock_wfs, excep, msg):
+        wfs_obj = mock_wfs.return_value
+        wfs_obj.getfeature.return_value = Mock()
+        wfs_obj.getfeature.return_value.read.side_effect = excep
+        with self.assertLogs('nvcl_kit', level='WARN') as nvcl_log:
+            param_obj = self.setup_param_obj(MAX_BOREHOLES)
+            kit = NVCLKit(param_obj)
+            l = kit.get_boreholes_list()
+            self.assertIn(msg, nvcl_log.output[0])
+
+
+    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    def test_exception_wfs_timeout(self, mock_wfs):
+        #
+        # Tests that can handle exceptions in getfeature's read() function
+        #
+        for excep in [Timeout, RequestException, HTTPException, ServiceException, OSError]:
+            self._wfs_exception_tester(mock_wfs, excep, 'WFS GetFeature failed')
+
+
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_empty_wfs(self, mock_wfs):
         #
         # Test empty but valid WFS response
-        # [ get_boreholes_list() & get_nvcl_id_list() ]
+        # (tests get_boreholes_list() & get_nvcl_id_list() )
         #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
@@ -39,13 +64,14 @@ class TestNVCLKit(unittest.TestCase):
             self.assertEqual(l, [])
             l = kit.get_nvcl_id_list()
             self.assertEqual(l, [])
+            wfs_obj.getfeature.return_value.read.assert_called_once()
 
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_max_bh_wfs(self, mock_wfs):
         #
         # Test full WFS response, maximum number of boreholes is enforced
-        # [ get_boreholes_list() & get_nvcl_id_list() ]
+        # (tests get_boreholes_list() & get_nvcl_id_list() )
         #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
@@ -65,7 +91,7 @@ class TestNVCLKit(unittest.TestCase):
     def test_all_bh_wfs(self, mock_wfs):
         #
         # Test full WFS response, unlimited number of boreholes
-        # [ get_boreholes_list() & get_nvcl_id_list() ]
+        # (tests get_boreholes_list() & get_nvcl_id_list() )
         #
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
@@ -138,6 +164,7 @@ class TestNVCLKit(unittest.TestCase):
                 open_obj.__enter__.return_value.read.return_value = resp_str 
                 spectral_data_list = kit.get_spectrallog_data("blah")
                 self.assertEqual(len(spectral_data_list), 15)
+
 
     def test_borehole_data(self):
         #
