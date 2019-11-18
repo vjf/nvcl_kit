@@ -139,7 +139,7 @@ class NVCLKit:
             except HTTPException as he_exc:
                 LOGGER.warning("HTTP error code returned: %s", str(he_exc))
             except OSError as os_exc:
-                LOGGER.warning("OS error: %s", str(os_exc))
+                LOGGER.warning("OS Error: %s", str(os_exc))
         else:
             self.wfs = wfs
         if self.wfs and not self._fetch_borehole_list(param_obj.MAX_BOREHOLES):
@@ -173,7 +173,7 @@ class NVCLKit:
             LOGGER.warning('HTTP Error: %s', he_exc)
             return OrderedDict()
         except OSError as os_exc:
-            LOGGER.warning("OS error: %s", str(os_exc))
+            LOGGER.warning("OS Error: %s", str(os_exc))
             return OrderedDict()
         LOGGER.debug('json_data = %s', json_data)
         meas_list = []
@@ -210,7 +210,7 @@ class NVCLKit:
 
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
-        :returns: the response as a byte string
+        :returns: the response as a byte string or an empty string upon error
         '''
         url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
         params = {'holeidentifier' : nvcl_id}
@@ -222,10 +222,10 @@ class NVCLKit:
                 response_str = response.read()
         except HTTPException as he_exc:
             LOGGER.warning('HTTP Error: %s', str(he_exc))
-            return []
+            return ""
         except OSError as os_exc:
-            LOGGER.warning('OS error: %s', str(os_exc))
-            return []
+            LOGGER.warning('OS Error: %s', str(os_exc))
+            return ""
         return response_str
 
 
@@ -238,6 +238,8 @@ class NVCLKit:
                   log_id, log_type, log_name
         '''
         response_str = self._get_dataset_collection(nvcl_id)
+        if not response_str:
+            return []
         root = ET.fromstring(response_str)
         logid_list = []
         for child in root.findall('./*/Logs/Log'):
@@ -260,6 +262,8 @@ class NVCLKit:
                   wavelengths
         '''
         response_str = self._get_dataset_collection(nvcl_id)
+        if not response_str:
+            return []
         root = ET.fromstring(response_str)
         logid_list = []
         for child in root.findall('./*/SpectralLogs/SpectralLog'):
@@ -283,6 +287,8 @@ class NVCLKit:
                   min_val, max_val
         '''
         response_str = self._get_dataset_collection(nvcl_id)
+        if not response_str:
+            return []
         root = ET.fromstring(response_str)
         logid_list = []
         for child in root.findall('./*/ProfilometerLogs/ProfLog'):
@@ -294,8 +300,6 @@ class NVCLKit:
             max_val = child.findtext('./maxVal', default='')
             logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, sample_count=sample_count, floats_per_sample=floats_per_sample, min_val=min_val, max_val=max_val))
         return logid_list
-
-
 
 
     def get_boreholes_list(self):
