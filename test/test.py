@@ -145,6 +145,23 @@ class TestNVCLKit(unittest.TestCase):
             self.assertEqual(len(l), 102)
 
 
+    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    def test_bad_coord_wfs(self, mock_wfs):
+        ''' Test WFS response with bad coordinates
+            (tests get_boreholes_list() & get_nvcl_id_list() )
+        '''
+        wfs_obj = mock_wfs.return_value
+        wfs_obj.getfeature.return_value = Mock()
+        with open('badcoord_wfs.txt') as fp:
+            wfs_resp_list = fp.readlines()
+            wfs_resp_str = ''.join(wfs_resp_list)
+            wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
+            param_obj = self.setup_param_obj(0)
+            with self.assertLogs('nvcl_kit', level='WARN') as nvcl_log:
+                kit = NVCLKit(param_obj)
+                self.assertIn('Cannot parse collar coordinates', nvcl_log.output[0])
+
+
     def setup_kit(self):
         ''' Initialises NVCLKit() object
 
@@ -266,6 +283,7 @@ class TestNVCLKit(unittest.TestCase):
         kit = self.setup_kit()
         self.urllib_exception_tester(HTTPException, kit.get_borehole_data, 'HTTP Error:', {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
         self.urllib_exception_tester(OSError, kit.get_borehole_data, 'OS Error:',  {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
+
 
 
 if __name__ == '__main__':
