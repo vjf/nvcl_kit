@@ -34,7 +34,7 @@ if not nvcl_obj.wfs:
 bh_list = nvcl_obj.get_boreholes_list()
 ```
 
-**4. Call get_borehole_logids() to get logids**
+**4. Call get_imagelog_data() to get logids**
 
 ```python
 # Get list of NVCL ids
