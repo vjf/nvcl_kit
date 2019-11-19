@@ -16,14 +16,14 @@ MAX_BOREHOLES = 20
 class TestNVCLKit(unittest.TestCase):
 
 
-    def setup_param_obj(self, max_boreholes):
+    def setup_param_obj(self, max_boreholes, bbox={"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}):
         ''' Create an parameter object for passing to NVCLKit constructor
  
         :param max_boreholes: maximum number of boreholes to download
         :returns: SimpleNamespace() object containing parameters
         '''
         param_obj = SimpleNamespace()
-        param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
+        param_obj.BBOX = bbox
         param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
         param_obj.BOREHOLE_CRS = "EPSG:4283"
         param_obj.WFS_VERSION = "1.1.0"
@@ -143,6 +143,25 @@ class TestNVCLKit(unittest.TestCase):
             self.assertEqual(len(l), 102)
             l = kit.get_nvcl_id_list()
             self.assertEqual(len(l), 102)
+
+
+    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    def test_bbox_wfs(self, mock_wfs):
+        ''' Test bounding box precision of selecting boreholes
+        '''
+        wfs_obj = mock_wfs.return_value
+        wfs_obj.getfeature.return_value = Mock()
+        with open('bbox_wfs.txt') as fp:
+            wfs_resp_list = fp.readlines()
+            wfs_resp_str = ''.join(wfs_resp_list)
+            wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
+            # 147 -41
+            param_obj = self.setup_param_obj(0, bbox={"west": 146.0,"south": -41.2,"east": 147.2,"north": -40.5})
+            kit = NVCLKit(param_obj)
+            l = kit.get_boreholes_list()
+            self.assertEqual(len(l), 1)
+            l = kit.get_nvcl_id_list()
+            self.assertEqual(len(l), 1)
 
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
