@@ -17,6 +17,11 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def setup_param_obj(self, max_boreholes):
+        ''' Create an parameter object for passing to NVCLKit constructor
+ 
+        :param max_boreholes: maximum number of boreholes to download
+        :returns: SimpleNamespace() object containing parameters
+        '''
         param_obj = SimpleNamespace()
         param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
         param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
@@ -28,6 +33,13 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def wfs_exception_tester(self, mock_wfs, excep, msg):
+        ''' Creates an exception in owslib getfeature() read()
+            and tests to see that the correct warning message is generated
+
+        :param mock_wfs: mock version of WebFeatureService() object
+        :param excep: exception that is to be created
+        :param msg: warning message to test for
+        '''
         mock_wfs.side_effect = excep
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
@@ -41,9 +53,9 @@ class TestNVCLKit(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_exception_wfs(self, mock_wfs):
-        #
-        # Tests that can handle exceptions in WebFeatureService function
-        #
+        ''' Tests that NVCLKit() can handle exceptions in WebFeatureService
+            function
+        '''
         self.wfs_exception_tester(mock_wfs, ServiceException, 'WFS error:')
         self.wfs_exception_tester(mock_wfs, RequestException, 'Request error:')
         self.wfs_exception_tester(mock_wfs, HTTPException, 'HTTP error code returned:')
@@ -51,6 +63,12 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def wfs_read_exception_tester(self, mock_wfs, excep, msg):
+        ''' Creates an exception in owslib getfeature() and tests for the
+            correct warning message
+        :param mock_wfs: mock version of WebFeatureService() object
+        :param excep: exception that is to be created
+        :param msg: warning message to test for
+        '''
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
         wfs_obj.getfeature.return_value.read.side_effect = excep
@@ -64,19 +82,17 @@ class TestNVCLKit(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_exception_getfeature_read(self, mock_wfs):
-        #
-        # Tests that can handle exceptions in getfeature's read() function
-        #
+        ''' Tests that can handle exceptions in getfeature's read() function
+        '''
         for excep in [Timeout, RequestException, HTTPException, ServiceException, OSError]:
             self.wfs_read_exception_tester(mock_wfs, excep, 'WFS GetFeature failed')
 
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_empty_wfs(self, mock_wfs):
-        #
-        # Test empty but valid WFS response
-        # (tests get_boreholes_list() & get_nvcl_id_list() )
-        #
+        ''' Test empty but valid WFS response
+            (tests get_boreholes_list() & get_nvcl_id_list() )
+        '''
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
         with open('empty_wfs.txt') as fp:
@@ -93,10 +109,9 @@ class TestNVCLKit(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_max_bh_wfs(self, mock_wfs):
-        #
-        # Test full WFS response, maximum number of boreholes is enforced
-        # (tests get_boreholes_list() & get_nvcl_id_list() )
-        #
+        ''' Test full WFS response, maximum number of boreholes is enforced
+            (tests get_boreholes_list() & get_nvcl_id_list() )
+        '''
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
         with open('full_wfs3.txt') as fp:
@@ -113,10 +128,9 @@ class TestNVCLKit(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
     def test_all_bh_wfs(self, mock_wfs):
-        #
-        # Test full WFS response, unlimited number of boreholes
-        # (tests get_boreholes_list() & get_nvcl_id_list() )
-        #
+        ''' Test full WFS response, unlimited number of boreholes
+            (tests get_boreholes_list() & get_nvcl_id_list() )
+        '''
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
         with open('full_wfs3.txt') as fp:
@@ -132,6 +146,10 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def setup_kit(self):
+        ''' Initialises NVCLKit() object
+
+        :returns: NVLKit() object
+        '''
         kit = None
         with unittest.mock.patch('nvcl_kit.WebFeatureService') as mock_wfs:
             wfs_obj = mock_wfs.return_value
@@ -146,9 +164,8 @@ class TestNVCLKit(unittest.TestCase):
    
 
     def test_imagelog_data(self):
-        #
-        # Test get_imagelog_data()
-        #
+        ''' Test get_imagelog_data()
+        '''
         kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
@@ -161,6 +178,13 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def urllib_exception_tester(self, exc, fn, msg, params):
+        ''' Creates an exception in urllib.request.urlopen() read() and
+            tests for the correct warning message
+        :param exc: exception that is to be created
+        :param fn: NVCLKit function to be tested
+        :param msg: warning message to test for
+        :param params: dictionary of parameters for 'fn'
+        '''
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
             open_obj.__enter__.return_value.read.side_effect = exc
@@ -171,15 +195,16 @@ class TestNVCLKit(unittest.TestCase):
     
 
     def test_imagelog_exception(self):
+        ''' Tests exception handling in get_imagelog_data()
+        '''
         kit = self.setup_kit()
         self.urllib_exception_tester(HTTPException, kit.get_imagelog_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
         self.urllib_exception_tester(OSError, kit.get_imagelog_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
         
     def test_profilometer_data(self):
-        #
-        # Test get_profilometer_data()
-        #
+        ''' Test get_profilometer_data()
+        '''
         kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
@@ -192,15 +217,16 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def test_profilometer_exception(self):
+        ''' Tests exception handling in get_profilometer_data()
+        '''
         kit = self.setup_kit()
         self.urllib_exception_tester(HTTPException, kit.get_profilometer_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
         self.urllib_exception_tester(OSError, kit.get_profilometer_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
         
     def test_spectrallog_data(self):
-        #
-        # Test get_spectrallog_data()
-        #
+        ''' Test get_spectrallog_data()
+        '''
         kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
@@ -213,15 +239,16 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def test_spectrallog_exception(self):
+        ''' Tests exception handling in get_spectrallog_data()
+        '''
         kit = self.setup_kit()
         self.urllib_exception_tester(HTTPException, kit.get_spectrallog_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
         self.urllib_exception_tester(OSError, kit.get_spectrallog_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
 
     def test_borehole_data(self):
-        #
-        # Test get_borehole_data()
-        #
+        ''' Test get_borehole_data()
+        '''
         kit = self.setup_kit()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
@@ -234,6 +261,8 @@ class TestNVCLKit(unittest.TestCase):
 
 
     def test_borehole_exception(self):
+        ''' Tests exception handling in get_borehole_data()
+        '''
         kit = self.setup_kit()
         self.urllib_exception_tester(HTTPException, kit.get_borehole_data, 'HTTP Error:', {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
         self.urllib_exception_tester(OSError, kit.get_borehole_data, 'OS Error:',  {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
