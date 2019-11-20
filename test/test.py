@@ -284,6 +284,15 @@ class TestNVCLKit(unittest.TestCase):
                 open_obj.__enter__.return_value.read.return_value = resp_str 
                 spectral_data_list = kit.get_spectrallog_data("blah")
                 self.assertEqual(len(spectral_data_list), 15)
+                self.assertEqual(spectral_data_list[0].log_id, '869f6712-f259-4267-874d-d341dd07bd5')
+                self.assertEqual(spectral_data_list[0].log_name, 'Reflectance')
+                self.assertEqual(spectral_data_list[0].wavelength_units, 'nm')
+                self.assertEqual(spectral_data_list[0].sample_count, 30954)
+                self.assertEqual(spectral_data_list[0].script, {'dscl': '0.000000', 'which': '64', 'prenorm': '0', 'postnorm': '0', 'bkrem': '0', 'sgleft': '0', 'sgright': '0', 'sgpoly': '0', 'sgderiv': '0'})
+                self.assertEqual(spectral_data_list[0].script_raw, 'dscl=0.000000; which=64; prenorm=0; postnorm=0; bkrem=0; sgleft=0; sgright=0; sgpoly=0; sgderiv=0;')
+                self.assertEqual(len(spectral_data_list[0].wavelengths), 531)
+                self.assertEqual(spectral_data_list[0].wavelengths[1], 384.0)
+
 
 
     def test_spectrallog_exception(self):
