@@ -247,8 +247,9 @@ class NVCLKit:
             log_name = child.findtext('./logName', default='')
             log_type = child.findtext('./logType', default='')
             log_id = child.findtext('./LogID', default='')
+            alg_id = child.findtext('./algorithmoutID', default='')
             if is_public == 'true' and log_name != '' and log_type != '' and log_id != '':
-                logid_list.append(SimpleNamespace(log_id=log_id, log_type=log_type, log_name=log_name))
+                logid_list.append(SimpleNamespace(log_id=log_id, log_type=log_type, log_name=log_name, algorithmout_id=alg_id))
         return logid_list
 
 
