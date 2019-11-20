@@ -113,7 +113,7 @@ class NVCLKit:
         from types import SimpleNamespace
         param_obj = SimpleNamespace()
         param_obj.BBOX = { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
-        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.WFS_URL = "http://blah.blah.blah/geoserver/wfs"
         param_obj.BOREHOLE_CRS = "EPSG:4283"
         param_obj.WFS_VERSION = "1.1.0"
         param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
@@ -292,12 +292,24 @@ class NVCLKit:
         root = ET.fromstring(response_str)
         logid_list = []
         for child in root.findall('./*/ProfilometerLogs/ProfLog'):
-            log_id = child.findtext('./LogID', default='')
+            log_id = child.findtext('./logID', default='')
             log_name = child.findtext('./logName', default='')
-            sample_count = child.findtext('./sampleCount', default='')
-            floats_per_sample = child.findtext('./floatsPerSample', default='')
-            min_val = child.findtext('./minVal', default='')
-            max_val = child.findtext('./maxVal', default='')
+            try:
+                sample_count = int(child.findtext('./sampleCount', default=0))
+            except ValueError:
+                sample_count = 0.0
+            try:
+                floats_per_sample = float(child.findtext('./floatsPerSample', default=0.0))
+            except ValueError:
+                floats_per_sample = 0.0
+            try:
+                min_val = float(child.findtext('./minVal', default=0.0))
+            except ValueError:
+                min_val = 0.0
+            try:
+                max_val = float(child.findtext('./maxVal', default=0.0))
+            except ValueError:
+                max_val = 0.0
             logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, sample_count=sample_count, floats_per_sample=floats_per_sample, min_val=min_val, max_val=max_val))
         return logid_list
 

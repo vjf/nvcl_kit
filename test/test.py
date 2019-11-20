@@ -251,6 +251,13 @@ class TestNVCLKit(unittest.TestCase):
                 prof_data_list = kit.get_profilometer_data("blah")
                 self.assertEqual(len(prof_data_list), 1)
 
+                self.assertEqual(prof_data_list[0].log_id, 'a61b105c-31e8-4da7-b790-4f21c9341c5')
+                self.assertEqual(prof_data_list[0].log_name, 'Profile log')
+                self.assertEqual(prof_data_list[0].max_val, 78.40174)
+                self.assertEqual(prof_data_list[0].min_val, 0.001537323)
+                self.assertEqual(prof_data_list[0].floats_per_sample, 128)
+                self.assertEqual(prof_data_list[0].sample_count, 30954)
+
 
     def test_profilometer_exception(self):
         ''' Tests exception handling in get_profilometer_data()
