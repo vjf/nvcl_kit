@@ -84,15 +84,24 @@
 <gsmlp:BoreholeView gml:id="gsml.borehole.12991">
 <gsmlp:identifier>http://www.blah.gov.au/resource/feature/blah/borehole/12991</gsmlp:identifier>
 <gsmlp:name>MC3</gsmlp:name>
+<gsmlp:description>descr</gsmlp:description>
+<gsmlp:purpose>purp</gsmlp:purpose>
+<gsmlp:status>STATUS</gsmlp:status>
+<gsmlp:operator>Opera</gsmlp:operator>
 <gsmlp:drillingMethod>unknown</gsmlp:drillingMethod>
 <gsmlp:driller>Blah Exploration Pty Ltd</gsmlp:driller>
 <gsmlp:drillStartDate>1978-05-28Z</gsmlp:drillStartDate>
+<gsmlp:drillEndDate>1979-05-28Z</gsmlp:drillEndDate>
+<gsmlp:positionalAccuracy>1.2</gsmlp:positionalAccuracy>
 <gsmlp:startPoint>unknown</gsmlp:startPoint>
+<gsmlp:source>Src</gsmlp:source>
 <gsmlp:inclinationType>inclined down</gsmlp:inclinationType>
+<gsmlp:genericSymbolizer>SSSSS</gsmlp:genericSymbolizer>
 <gsmlp:boreholeMaterialCustodian>blah</gsmlp:boreholeMaterialCustodian>
 <gsmlp:boreholeLength_m>60.3</gsmlp:boreholeLength_m>
 <gsmlp:elevation_m>791.4</gsmlp:elevation_m>
 <gsmlp:elevation_srs>http://www.opengis.net/def/crs/EPSG/0/5711</gsmlp:elevation_srs>
+<gsmlp:parentBorehole_uri>http://blah.org/blah-d354454546e3esd3454</gsmlp:parentBorehole_uri>
 <gsmlp:metadata_uri>http://blah.org/geosciml-drillhole-locations-in-blah-d354a70a4a29536166ab8a9ca6470a79d628c05e</gsmlp:metadata_uri>
 <gsmlp:shape>
 <gml:Point srsDimension="2" srsName="http://www.opengis.net/gml/srs/epsg.xml#8311">
@@ -102,18 +111,6 @@
 <gsmlp:nvclCollection>true</gsmlp:nvclCollection>
 </gsmlp:BoreholeView>
 <gsmlp:BoreholeView gml:id="gsml.borehole.12992">
-<gsmlp:identifier>http://www.blah.gov.au/resource/feature/blah/borehole/12992</gsmlp:identifier>
-<gsmlp:name>MC4</gsmlp:name>
-<gsmlp:drillingMethod>unknown</gsmlp:drillingMethod>
-<gsmlp:driller>Blah Exploration Pty Ltd</gsmlp:driller>
-<gsmlp:drillStartDate>1978-07-01Z</gsmlp:drillStartDate>
-<gsmlp:startPoint>unknown</gsmlp:startPoint>
-<gsmlp:inclinationType>inclined down</gsmlp:inclinationType>
-<gsmlp:boreholeMaterialCustodian>blah</gsmlp:boreholeMaterialCustodian>
-<gsmlp:boreholeLength_m>122.4</gsmlp:boreholeLength_m>
-<gsmlp:elevation_m>745.0</gsmlp:elevation_m>
-<gsmlp:elevation_srs>http://www.opengis.net/def/crs/EPSG/0/5711</gsmlp:elevation_srs>
-<gsmlp:metadata_uri>http://blah.org/geosciml-drillhole-locations-in-blah-d354a70a4a29536166ab8a9ca6470a79d628c05e</gsmlp:metadata_uri>
 <gsmlp:shape>
 <gml:Point srsDimension="2" srsName="http://www.opengis.net/gml/srs/epsg.xml#8311">
 <gml:pos>145.67585285 -41.61422342</gml:pos>

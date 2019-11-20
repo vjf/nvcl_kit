@@ -141,8 +141,39 @@ class TestNVCLKit(unittest.TestCase):
             kit = NVCLKit(param_obj)
             l = kit.get_boreholes_list()
             self.assertEqual(len(l), 102)
+            # Test with all fields having values
+            self.assertEqual(l[4], {
+                'nvcl_id': '12991',
+                'x': 145.67616489, 'y': -41.61921239,
+                'href': 'http://www.blah.gov.au/resource/feature/blah/borehole/12991',
+                'name': 'MC3',
+                'description': 'descr',
+                'purpose': 'purp',
+                'status': 'STATUS',
+                'drillingMethod': 'unknown',
+                'operator': 'Opera',
+                'driller': 'Blah Exploration Pty Ltd',
+                'drillStartDate': '1978-05-28Z',
+                'drillEndDate': '1979-05-28Z',
+                'startPoint': 'unknown',
+                'inclinationType': 'inclined down',
+                'boreholeMaterialCustodian': 'blah',
+                'boreholeLength_m': '60.3',
+                'elevation_m': '791.4',
+                'elevation_srs': 'http://www.opengis.net/def/crs/EPSG/0/5711',
+                'positionalAccuracy': '1.2',
+                'source': 'Src',
+                'parentBorehole_uri': 'http://blah.org/blah-d354454546e3esd3454',
+                'metadata_uri': 'http://blah.org/geosciml-drillhole-locations-in-blah-d354a70a4a29536166ab8a9ca6470a79d628c05e',
+                'genericSymbolizer': 'SSSSS',
+                'z': 791.4})
+
+            # Test an almost completely empty borehole
+            self.assertEqual(l[5], {'nvcl_id': '12992', 'x': 145.67585285, 'y': -41.61422342, 'href': '', 'name': '', 'description': '', 'purpose': '', 'status': '', 'drillingMethod': '', 'operator': '', 'driller': '', 'drillStartDate': '', 'drillEndDate': '', 'startPoint': '', 'inclinationType': '', 'boreholeMaterialCustodian': '', 'boreholeLength_m': '', 'elevation_m': '', 'elevation_srs': '', 'positionalAccuracy': '', 'source': '', 'parentBorehole_uri': '', 'metadata_uri': '', 'genericSymbolizer': '', 'z': 0.0})
+
             l = kit.get_nvcl_id_list()
             self.assertEqual(len(l), 102)
+            self.assertEqual(l[0:3], ['10026','10027','10343'])
 
 
     @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
@@ -155,7 +186,6 @@ class TestNVCLKit(unittest.TestCase):
             wfs_resp_list = fp.readlines()
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
-            # 147 -41
             param_obj = self.setup_param_obj(0, bbox={"west": 146.0,"south": -41.2,"east": 147.2,"north": -40.5})
             kit = NVCLKit(param_obj)
             l = kit.get_boreholes_list()
@@ -315,6 +345,8 @@ class TestNVCLKit(unittest.TestCase):
                 open_obj.__enter__.return_value.read.return_value = bytes(resp_str, 'ascii') 
                 bh_data_list = kit.get_borehole_data("dummy-id", 10.0, "dummy-class")
                 self.assertEqual(len(bh_data_list), 28)
+                self.assertEqual(bh_data_list[5.0], {'className': 'dummy-class', 'classText': 'WHITE-MICA', 'colour': (1.0, 1.0, 0.0, 1.0)})
+                self.assertEqual(bh_data_list[275.0], {'className': 'dummy-class', 'classText': 'WHITE-MICA', 'colour': (1.0, 1.0, 0.0, 1.0)})
 
 
     def test_borehole_exception(self):
