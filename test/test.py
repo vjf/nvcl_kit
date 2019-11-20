@@ -212,6 +212,11 @@ class TestNVCLKit(unittest.TestCase):
                 imagelog_data_list = kit.get_imagelog_data("blah")
                 self.assertEqual(len(imagelog_data_list), 5)
 
+                self.assertEqual(imagelog_data_list[0].log_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
+                self.assertEqual(imagelog_data_list[0].log_name, 'Tray')
+                self.assertEqual(imagelog_data_list[0].log_type, '1')
+                self.assertEqual(imagelog_data_list[0].algorithmout_id, '0')
+
 
     def urllib_exception_tester(self, exc, fn, msg, params):
         ''' Creates an exception in urllib.request.urlopen() read() and
