@@ -271,10 +271,24 @@ class NVCLKit:
             log_id = child.findtext('./logID', default='')
             log_name = child.findtext('./logName', default='')
             wavelength_units = child.findtext('./wavelengthUnits', default='')
-            sample_count = child.findtext('./sampleCount', default='')
-            script = child.findtext('./script', default='')
+            try:
+                sample_count = int(child.findtext('./sampleCount', default=0))
+            except ValueError:
+                sample_count = 0
+            script_raw = child.findtext('./script', default='')
+            script_str = script_raw.replace('; ',';')
+            script_str_list = script_str.split(';')
+            script_dict = {}
+            for assgn in script_str_list:
+                var, eq, val = assgn.partition('=')
+                if var and eq == '=':
+                    script_dict[var] = val
             wavelengths = child.findtext('./wavelengths', default='')
-            logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, wavelength_units=wavelength_units, sample_count=sample_count, script=script, wavelengths=wavelengths))
+            try:
+                wv_list = [ float(wv_str) for wv_str in wavelengths.split(',') ]
+            except ValueError:
+                wv_list = []
+            logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, wavelength_units=wavelength_units, sample_count=sample_count, script_raw=script_raw, script=script_dict, wavelengths=wv_list))
         return logid_list
 
 
