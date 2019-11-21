@@ -1,30 +1,28 @@
 # pynvcl
 
-#### A simple module used to extract Australian NVCL borehole data
-
-Requires:  [owslib](https://github.com/geopython/OWSLib)
+#### A simple module used to read Australian NVCL borehole data
 
 How to extract NVCL borehole data:
 
 **1. Instantiate class**
 
 ```python
-from nvcl_kit import NVCLKit
+from nvcl_kit.reader import NVCLReader 
 from types import SimpleNamespace
-param_obj = SimpleNamespace()
-param_obj.BBOX = {"west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
-param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
-param_obj.BOREHOLE_CRS = "EPSG:4283"
-param_obj.WFS_VERSION = "1.1.0"
-param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
-param_obj.MAX_BOREHOLES = 20
-nvcl_obj = NVCLKit(param_obj)
+param = SimpleNamespace()
+param.BBOX = {"west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
+param.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+param.BOREHOLE_CRS = "EPSG:4283"
+param.WFS_VERSION = "1.1.0"
+param.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+param.MAX_BOREHOLES = 20
+reader = NVCLReader(param)
 ```
 
 **2. Check if 'wfs' is not 'None' to see if this instance initialised properly**
 
 ```python
-if not nvcl_obj.wfs:
+if not reader.wfs:
     print("ERROR!")
 ```
 
