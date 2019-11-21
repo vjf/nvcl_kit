@@ -8,16 +8,15 @@ from http.client import HTTPException
 
 from types import SimpleNamespace
 
-sys.path.append(os.path.join('..', 'nvcl_kit'))
-from nvcl_kit import NVCLKit
+from nvcl_kit.reader import NVCLReader
 
 MAX_BOREHOLES = 20
 
-class TestNVCLKit(unittest.TestCase):
+class TestNVCLReader(unittest.TestCase):
 
 
     def setup_param_obj(self, max_boreholes, bbox={"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}):
-        ''' Create an parameter object for passing to NVCLKit constructor
+        ''' Create an parameter object for passing to NVCLReader constructor
  
         :param max_boreholes: maximum number of boreholes to download
         :returns: SimpleNamespace() object containing parameters
@@ -44,16 +43,16 @@ class TestNVCLKit(unittest.TestCase):
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
         wfs_obj.getfeature.return_value.read.side_effect = excep
-        with self.assertLogs('nvcl_kit', level='WARN') as nvcl_log:
+        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
             param_obj = self.setup_param_obj(MAX_BOREHOLES)
-            kit = NVCLKit(param_obj)
+            rdr = NVCLReader(param_obj)
             self.assertIn(msg, nvcl_log.output[0])
-            self.assertEqual(kit.wfs, None)
+            self.assertEqual(rdr.wfs, None)
 
 
-    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_exception_wfs(self, mock_wfs):
-        ''' Tests that NVCLKit() can handle exceptions in WebFeatureService
+        ''' Tests that NVCLReader() can handle exceptions in WebFeatureService
             function
         '''
         self.wfs_exception_tester(mock_wfs, ServiceException, 'WFS error:')
@@ -72,15 +71,15 @@ class TestNVCLKit(unittest.TestCase):
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
         wfs_obj.getfeature.return_value.read.side_effect = excep
-        with self.assertLogs('nvcl_kit', level='WARN') as nvcl_log:
+        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
             param_obj = self.setup_param_obj(MAX_BOREHOLES)
-            kit = NVCLKit(param_obj)
-            l = kit.get_boreholes_list()
+            rdr = NVCLReader(param_obj)
+            l = rdr.get_boreholes_list()
             self.assertIn(msg, nvcl_log.output[0])
-            self.assertEqual(kit.wfs, None)
+            self.assertEqual(rdr.wfs, None)
 
 
-    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_exception_getfeature_read(self, mock_wfs):
         ''' Tests that can handle exceptions in getfeature's read() function
         '''
@@ -88,7 +87,7 @@ class TestNVCLKit(unittest.TestCase):
             self.wfs_read_exception_tester(mock_wfs, excep, 'WFS GetFeature failed')
 
 
-    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_empty_wfs(self, mock_wfs):
         ''' Test empty but valid WFS response
             (tests get_boreholes_list() & get_nvcl_id_list() )
@@ -99,15 +98,15 @@ class TestNVCLKit(unittest.TestCase):
             wfs_resp_str = fp.readline()
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str
             param_obj = self.setup_param_obj(MAX_BOREHOLES)
-            kit = NVCLKit(param_obj)
-            l = kit.get_boreholes_list()
+            rdr = NVCLReader(param_obj)
+            l = rdr.get_boreholes_list()
             self.assertEqual(l, [])
-            l = kit.get_nvcl_id_list()
+            l = rdr.get_nvcl_id_list()
             self.assertEqual(l, [])
             wfs_obj.getfeature.return_value.read.assert_called_once()
 
 
-    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_max_bh_wfs(self, mock_wfs):
         ''' Test full WFS response, maximum number of boreholes is enforced
             (tests get_boreholes_list() & get_nvcl_id_list() )
@@ -119,14 +118,14 @@ class TestNVCLKit(unittest.TestCase):
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
             param_obj = self.setup_param_obj(MAX_BOREHOLES)
-            kit = NVCLKit(param_obj)
-            l = kit.get_boreholes_list()
+            rdr = NVCLReader(param_obj)
+            l = rdr.get_boreholes_list()
             self.assertEqual(len(l), MAX_BOREHOLES)
-            l = kit.get_nvcl_id_list()
+            l = rdr.get_nvcl_id_list()
             self.assertEqual(len(l), MAX_BOREHOLES)
 
 
-    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_all_bh_wfs(self, mock_wfs):
         ''' Test full WFS response, unlimited number of boreholes
             (tests get_boreholes_list() & get_nvcl_id_list() )
@@ -138,8 +137,8 @@ class TestNVCLKit(unittest.TestCase):
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
             param_obj = self.setup_param_obj(0)
-            kit = NVCLKit(param_obj)
-            l = kit.get_boreholes_list()
+            rdr = NVCLReader(param_obj)
+            l = rdr.get_boreholes_list()
             self.assertEqual(len(l), 102)
             # Test with all fields having values
             self.assertEqual(l[4], {
@@ -171,12 +170,12 @@ class TestNVCLKit(unittest.TestCase):
             # Test an almost completely empty borehole
             self.assertEqual(l[5], {'nvcl_id': '12992', 'x': 145.67585285, 'y': -41.61422342, 'href': '', 'name': '', 'description': '', 'purpose': '', 'status': '', 'drillingMethod': '', 'operator': '', 'driller': '', 'drillStartDate': '', 'drillEndDate': '', 'startPoint': '', 'inclinationType': '', 'boreholeMaterialCustodian': '', 'boreholeLength_m': '', 'elevation_m': '', 'elevation_srs': '', 'positionalAccuracy': '', 'source': '', 'parentBorehole_uri': '', 'metadata_uri': '', 'genericSymbolizer': '', 'z': 0.0})
 
-            l = kit.get_nvcl_id_list()
+            l = rdr.get_nvcl_id_list()
             self.assertEqual(len(l), 102)
             self.assertEqual(l[0:3], ['10026','10027','10343'])
 
 
-    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_bbox_wfs(self, mock_wfs):
         ''' Test bounding box precision of selecting boreholes
         '''
@@ -187,14 +186,14 @@ class TestNVCLKit(unittest.TestCase):
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
             param_obj = self.setup_param_obj(0, bbox={"west": 146.0,"south": -41.2,"east": 147.2,"north": -40.5})
-            kit = NVCLKit(param_obj)
-            l = kit.get_boreholes_list()
+            rdr = NVCLReader(param_obj)
+            l = rdr.get_boreholes_list()
             self.assertEqual(len(l), 1)
-            l = kit.get_nvcl_id_list()
+            l = rdr.get_nvcl_id_list()
             self.assertEqual(len(l), 1)
 
 
-    @unittest.mock.patch('nvcl_kit.WebFeatureService', autospec=True)
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_bad_coord_wfs(self, mock_wfs):
         ''' Test WFS response with bad coordinates
             (tests get_boreholes_list() & get_nvcl_id_list() )
@@ -206,18 +205,18 @@ class TestNVCLKit(unittest.TestCase):
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
             param_obj = self.setup_param_obj(0)
-            with self.assertLogs('nvcl_kit', level='WARN') as nvcl_log:
-                kit = NVCLKit(param_obj)
+            with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
+                rdr = NVCLReader(param_obj)
                 self.assertIn('Cannot parse collar coordinates', nvcl_log.output[0])
 
 
-    def setup_kit(self):
-        ''' Initialises NVCLKit() object
+    def setup_reader(self):
+        ''' Initialises NVCLReader() object
 
         :returns: NVLKit() object
         '''
-        kit = None
-        with unittest.mock.patch('nvcl_kit.WebFeatureService') as mock_wfs:
+        rdr = None
+        with unittest.mock.patch('nvcl_kit.reader.WebFeatureService') as mock_wfs:
             wfs_obj = mock_wfs.return_value
             wfs_obj.getfeature.return_value = Mock()
             with open('full_wfs3.txt') as fp:
@@ -225,21 +224,21 @@ class TestNVCLKit(unittest.TestCase):
                 wfs_resp_str = ''.join(wfs_resp_list)
                 wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
                 param_obj = self.setup_param_obj(0)
-                kit = NVCLKit(param_obj)
-        return kit
+                rdr = NVCLReader(param_obj)
+        return rdr 
    
 
     def test_imagelog_data(self):
         ''' Test get_imagelog_data()
         '''
-        kit = self.setup_kit()
+        rdr = self.setup_reader()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 resp_list = fp.readlines()
                 resp_str = ''.join(resp_list)
                 open_obj.__enter__.return_value.read.return_value = resp_str 
-                imagelog_data_list = kit.get_imagelog_data("blah")
+                imagelog_data_list = rdr.get_imagelog_data("blah")
                 self.assertEqual(len(imagelog_data_list), 5)
 
                 self.assertEqual(imagelog_data_list[0].log_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
@@ -252,7 +251,7 @@ class TestNVCLKit(unittest.TestCase):
         ''' Creates an exception in urllib.request.urlopen() read() and
             tests for the correct warning message
         :param exc: exception that is to be created
-        :param fn: NVCLKit function to be tested
+        :param fn: NVCLReader function to be tested
         :param msg: warning message to test for
         :param params: dictionary of parameters for 'fn'
         '''
@@ -260,7 +259,7 @@ class TestNVCLKit(unittest.TestCase):
             open_obj = mock_request.return_value
             open_obj.__enter__.return_value.read.side_effect = exc
             open_obj.__enter__.return_value.read.return_value = '' 
-            with self.assertLogs('nvcl_kit', level='WARN') as nvcl_log:
+            with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
                 imagelog_data_list = fn(**params)
                 self.assertIn(msg, nvcl_log.output[0])
     
@@ -268,22 +267,22 @@ class TestNVCLKit(unittest.TestCase):
     def test_imagelog_exception(self):
         ''' Tests exception handling in get_imagelog_data()
         '''
-        kit = self.setup_kit()
-        self.urllib_exception_tester(HTTPException, kit.get_imagelog_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
-        self.urllib_exception_tester(OSError, kit.get_imagelog_data, 'OS Error:', {'nvcl_id':'dummy-id'})
+        rdr = self.setup_reader()
+        self.urllib_exception_tester(HTTPException, rdr.get_imagelog_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
+        self.urllib_exception_tester(OSError, rdr.get_imagelog_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
         
     def test_profilometer_data(self):
         ''' Test get_profilometer_data()
         '''
-        kit = self.setup_kit()
+        rdr = self.setup_reader()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 resp_list = fp.readlines()
                 resp_str = ''.join(resp_list)
                 open_obj.__enter__.return_value.read.return_value = resp_str 
-                prof_data_list = kit.get_profilometer_data("blah")
+                prof_data_list = rdr.get_profilometer_data("blah")
                 self.assertEqual(len(prof_data_list), 1)
 
                 self.assertEqual(prof_data_list[0].log_id, 'a61b105c-31e8-4da7-b790-4f21c9341c5')
@@ -297,22 +296,22 @@ class TestNVCLKit(unittest.TestCase):
     def test_profilometer_exception(self):
         ''' Tests exception handling in get_profilometer_data()
         '''
-        kit = self.setup_kit()
-        self.urllib_exception_tester(HTTPException, kit.get_profilometer_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
-        self.urllib_exception_tester(OSError, kit.get_profilometer_data, 'OS Error:', {'nvcl_id':'dummy-id'})
+        rdr = self.setup_reader()
+        self.urllib_exception_tester(HTTPException, rdr.get_profilometer_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
+        self.urllib_exception_tester(OSError, rdr.get_profilometer_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
         
     def test_spectrallog_data(self):
         ''' Test get_spectrallog_data()
         '''
-        kit = self.setup_kit()
+        rdr = self.setup_reader()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 resp_list = fp.readlines()
                 resp_str = ''.join(resp_list)
                 open_obj.__enter__.return_value.read.return_value = resp_str 
-                spectral_data_list = kit.get_spectrallog_data("blah")
+                spectral_data_list = rdr.get_spectrallog_data("blah")
                 self.assertEqual(len(spectral_data_list), 15)
                 self.assertEqual(spectral_data_list[0].log_id, '869f6712-f259-4267-874d-d341dd07bd5')
                 self.assertEqual(spectral_data_list[0].log_name, 'Reflectance')
@@ -328,22 +327,22 @@ class TestNVCLKit(unittest.TestCase):
     def test_spectrallog_exception(self):
         ''' Tests exception handling in get_spectrallog_data()
         '''
-        kit = self.setup_kit()
-        self.urllib_exception_tester(HTTPException, kit.get_spectrallog_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
-        self.urllib_exception_tester(OSError, kit.get_spectrallog_data, 'OS Error:', {'nvcl_id':'dummy-id'})
+        rdr = self.setup_reader()
+        self.urllib_exception_tester(HTTPException, rdr.get_spectrallog_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
+        self.urllib_exception_tester(OSError, rdr.get_spectrallog_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
 
     def test_borehole_data(self):
         ''' Test get_borehole_data()
         '''
-        kit = self.setup_kit()
+        rdr = self.setup_reader()
         with unittest.mock.patch('urllib.request.urlopen') as mock_request:
             open_obj = mock_request.return_value
             with open('bh_data.txt') as fp:
                 resp_list = fp.readlines()
                 resp_str = ''.join(resp_list)
                 open_obj.__enter__.return_value.read.return_value = bytes(resp_str, 'ascii') 
-                bh_data_list = kit.get_borehole_data("dummy-id", 10.0, "dummy-class")
+                bh_data_list = rdr.get_borehole_data("dummy-id", 10.0, "dummy-class")
                 self.assertEqual(len(bh_data_list), 28)
                 self.assertEqual(bh_data_list[5.0], {'className': 'dummy-class', 'classText': 'WHITE-MICA', 'colour': (1.0, 1.0, 0.0, 1.0)})
                 self.assertEqual(bh_data_list[275.0], {'className': 'dummy-class', 'classText': 'WHITE-MICA', 'colour': (1.0, 1.0, 0.0, 1.0)})
@@ -352,9 +351,9 @@ class TestNVCLKit(unittest.TestCase):
     def test_borehole_exception(self):
         ''' Tests exception handling in get_borehole_data()
         '''
-        kit = self.setup_kit()
-        self.urllib_exception_tester(HTTPException, kit.get_borehole_data, 'HTTP Error:', {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
-        self.urllib_exception_tester(OSError, kit.get_borehole_data, 'OS Error:',  {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
+        rdr = self.setup_reader()
+        self.urllib_exception_tester(HTTPException, rdr.get_borehole_data, 'HTTP Error:', {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
+        self.urllib_exception_tester(OSError, rdr.get_borehole_data, 'OS Error:',  {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
 
 
 

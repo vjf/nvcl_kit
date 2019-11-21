@@ -88,7 +88,7 @@ def bgr2rgba(bgr):
     return ((bgr & 255)/255.0, ((bgr & 65280) >> 8)/255.0, (bgr >> 16)/255.0, 1.0)
 
 
-class NVCLKit:
+class NVCLReader:
     ''' A class to extract NVCL borehole data:
     (1) Instantiate class (see constructor description)
     (2) Call get_boreholes_list() to get list of NVCL borehole data
