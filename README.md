@@ -1,8 +1,8 @@
-# pynvcl
+# nvcl_kit
 
 #### A simple module used to read Australian NVCL borehole data
 
-How to extract NVCL borehole data:
+*Brief Introduction:* how to extract NVCL borehole data
 
 **1. Instantiate class**
 
@@ -26,23 +26,30 @@ if not reader.wfs:
     print("ERROR!")
 ```
 
-**3. Call get_boreholes_list() to get list of NVCL boreholes**
+**3. Call get_boreholes_list() to get list of NVCL borehole data**
 
 ```python
-bh_list = nvcl_obj.get_boreholes_list()
+bh_list = reader.get_boreholes_list()
 ```
 
-**4. Call get_imagelog_data() to get logids**
+**4. Call get_nvcl_id_list() to get a list of NVCL borehole ids
+
+```python
+nvcl_id_list = reader.get_nvcl_id_list()
+```
+
+**5. Using an NVCL borehole id from previous step, call get_imagelog_data()
+     to get logids**
 
 ```python
 # Get list of NVCL ids
-nvcl_id_list = nvcl_obj.get_nvcl_id_list()
-# Get logids for first borehole in list
+nvcl_id_list = reader.get_nvcl_id_list()
+# Get NVCL log id for first borehole in list
 nvcl_id = nvcl_id_list[0]
-log_id_list = nvcl_obj.get_borehole_logids(nvcl_id)
+imagelog_data_list = reader.get_imagelog_data(nvcl_id)
 ```
 
-**5. Call get_borehole_data() to get borehole data**
+**6. Call get_borehole_data() to get borehole data**
 
 ```python
 # Analysis class has 2 parts:
@@ -56,11 +63,20 @@ log_id_list = nvcl_obj.get_borehole_logids(nvcl_id)
 HEIGHT_RESOLUTION = 20.0
 ANALYSIS_CLASS = 'Grp1 uTSAS'
 LOG_TYPE = '1'
-for log_id, log_type, log_name in log_id_list:
-    if log_type == LOG_TYPE and log_name == ANALYSIS_CLASS:
-        bh_data = nvcl_obj.get_borehole_data(log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
+for il in imagelog_data_list:
+    if il.log_type == LOG_TYPE and il.log_name == ANALYSIS_CLASS:
+        bh_data = reader.get_borehole_data(il.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
         # Print out the colour, mineral and class name at each depth
         for depth in bh_data:
             print("At ", depth, "my class, mineral, colour is", bh_data[depth]['className'],
                   bh_data[depth]['classText'], bh_data[depth]['colour'])
 ```
+
+**7. Using the NVCL ids from Step 5, you can also call get_spectrallog_data() and get_profilometer_data()**
+
+```python
+spectrallog_data_list = reader.get_spectrallog_data(nvcl_id)
+profilometer_data_list = reader.get_profilometer_data(nvcl_id)
+```
+
+

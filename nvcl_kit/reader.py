@@ -89,7 +89,7 @@ def bgr2rgba(bgr):
 
 
 class NVCLReader:
-    ''' A class to extract NVCL borehole data:
+    ''' A class to extract NVCL borehole data (see README.md for details):
     (1) Instantiate class (see constructor description)
     (2) Call get_boreholes_list() to get list of NVCL borehole data
     (3) Call get_borehole_data() to get borehole data
