@@ -11,19 +11,19 @@ README = (HERE / "README.md").read_text()
 
 # This call to setup() does all the work
 setup_info = dict(
-    name="pynvcl",
+    name="nvcl_kit",
     version="0.1.6",
     description="Downloads Australian NVCL datasets",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://gitlab.com/csiro-geoanalytics/python-shared/pynvcl",
+    url="https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit",
     author="Vincent Fazio",
     author_email="vincent.fazio@csiro.au",
-    license="MIT",
+    license="CSIRO BSD/MIT",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Topic :: Scientific/Engineering",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: BSD License",
         "Intended Audience :: Developers",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3",
