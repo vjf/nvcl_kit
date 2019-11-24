@@ -330,18 +330,42 @@ class NVCLReader:
 
 
     def get_boreholes_list(self):
+        ''' Returns a list of dictionary objects, extracted from WFS requests of
+            boreholes. Fields are mostly taken from GeoSciML v4.1 Borehole View:
+              'nvcl_id', 'identifier', 'name', 'description', 'purpose',
+              'status', 'drillingMethod', 'operator', 'driller', 'drillStartDate',
+              'drillEndDate', 'startPoint', 'inclinationType', 'href',
+              'boreholeMaterialCustodian', 'boreholeLength_m', 'elevation_m',
+              'elevation_srs', 'positionalAccuracy', 'source', 'x', 'y, 'z',
+              'parentBorehole_uri', 'metadata_uri', 'genericSymbolizer'
+            NB: (1) Depending on the WFS, not all fields will have values
+                (2) 'href' corresponds to 'gsmlp:identifier'
+                (3) 'x', 'y', 'z' x-coordinate, y-coordinate and elevation
+                (4) 'nvcl_id' is the GML 'id', used as an id in the NVCL services
+
+            :returns: a list of dictionaries whose fields correspond to a response
+                      from a WFS request of GeoSciML v4.1 BoreholeView
+        '''
         return self.borehole_list  
 
     def get_nvcl_id_list(self):
+        '''
+        Returns a list of NVCL ids, can be used as input to other 'nvcl_kit' API
+        calls e.g. get_spectrallog_data()
+
+        :return: a list of NVCL id strings
+        '''
         return [bh['nvcl_id'] for bh in self.borehole_list]
 
     def _fetch_borehole_list(self, max_boreholes):
         ''' Returns a list of WFS borehole data within bounding box, but only NVCL boreholes
             [ { 'nvcl_id': XXX, 'x': XXX, 'y': XXX, 'href': XXX, ... }, { ... } ]
+            See description of 'get_borehole_list()' for more info
 
         :param max_boreholes: maximum number of boreholes to retrieve
+        :return: Same list as 'get_borehole_list()'
         '''
-        LOGGER.debug("get_boreholes_list(%d)", max_boreholes)
+        LOGGER.debug("_fetch_boreholes_list(%d)", max_boreholes)
         # Can't filter for BBOX and nvclCollection==true at the same time
         # [owslib's BBox uses 'ows:BoundingBox', not supported in WFS]
         # so is best to do the BBOX manually
@@ -358,7 +382,7 @@ class NVCLReader:
             LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
             return False
         borehole_list = []
-        LOGGER.debug('get_boreholes_list() resp= %s', response_str)
+        LOGGER.debug('_fetch_boreholes_list() resp= %s', response_str)
         borehole_cnt = 0
         root = ET.fromstring(response_str)
 
@@ -406,5 +430,5 @@ class NVCLReader:
                     self.borehole_list.append(borehole_dict)
                 if max_boreholes > 0 and borehole_cnt >= max_boreholes:
                     break
-        LOGGER.debug('get_boreholes_list() returns True')
+        LOGGER.debug('_fetch_boreholes_list() returns True')
         return True
