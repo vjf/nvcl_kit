@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'nvcl_kit'
-copyright = '2019, Vincent Fazio'
+copyright = 'AuScope, CSIRO 2019'
 author = 'Vincent Fazio'
 
 
