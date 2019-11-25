@@ -63,9 +63,9 @@ imagelog_data_list = reader.get_imagelog_data(nvcl_id)
 HEIGHT_RESOLUTION = 20.0
 ANALYSIS_CLASS = 'Grp1 uTSAS'
 LOG_TYPE = '1'
-for il in imagelog_data_list:
-    if il.log_type == LOG_TYPE and il.log_name == ANALYSIS_CLASS:
-        bh_data = reader.get_borehole_data(il.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
+for ild in imagelog_data_list:
+    if ild.log_type == LOG_TYPE and ild.log_name == ANALYSIS_CLASS:
+        bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
         # Print out the colour, mineral and class name at each depth
         for depth in bh_data:
             print("At ", depth, "my class, mineral, colour is", bh_data[depth]['className'],
