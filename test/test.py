@@ -344,8 +344,13 @@ class TestNVCLReader(unittest.TestCase):
                 open_obj.__enter__.return_value.read.return_value = bytes(resp_str, 'ascii') 
                 bh_data_list = rdr.get_borehole_data("dummy-id", 10.0, "dummy-class")
                 self.assertEqual(len(bh_data_list), 28)
-                self.assertEqual(bh_data_list[5.0], {'className': 'dummy-class', 'classText': 'WHITE-MICA', 'colour': (1.0, 1.0, 0.0, 1.0)})
-                self.assertEqual(bh_data_list[275.0], {'className': 'dummy-class', 'classText': 'WHITE-MICA', 'colour': (1.0, 1.0, 0.0, 1.0)})
+                self.assertEqual(bh_data_list[5.0].className, 'dummy-class')
+                self.assertEqual(bh_data_list[5.0].classText, 'WHITE-MICA')
+                self.assertEqual(bh_data_list[5.0].colour, (1.0, 1.0, 0.0, 1.0))
+
+                self.assertEqual(bh_data_list[275.0].className, 'dummy-class')
+                self.assertEqual(bh_data_list[275.0].classText, 'WHITE-MICA')
+                self.assertEqual(bh_data_list[275.0].colour, (1.0, 1.0, 0.0, 1.0))
 
 
     def test_borehole_exception(self):
