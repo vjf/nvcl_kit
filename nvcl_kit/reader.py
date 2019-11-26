@@ -154,9 +154,10 @@ class NVCLReader:
                        fetched from 'get_imagelog_data()'
         :param height_resol: height resolution, float
         :param class_name: name of mineral class
-        :returns: a dict: key - depth, float; value - { 'colour': RGB colour string,
-                                                    'className': class name,
-                                                    'classText': mineral name }
+        :returns: dict: key - depth, float; value - SimpleNamespace(
+                                                    'colour'= RGB colour string,
+                                                    'className'= class name,
+                                                    'classText'= mineral name )
         '''
         LOGGER.debug(" get_borehole_data(%s, %d, %s)", log_id, height_resol, class_name)
         # Send HTTP request, get response
@@ -184,7 +185,6 @@ class NVCLReader:
             LOGGER.warning("Logid not known")
         else:
             # Sort then group by depth
-            depth_dict = OrderedDict()
             sorted_meas_list = sorted(meas_list, key=lambda x: x['roundedDepth'])
             for depth, group in itertools.groupby(sorted_meas_list, lambda x: x['roundedDepth']):
                 # Filter out invalid values
@@ -198,9 +198,12 @@ class NVCLReader:
                     LOGGER.warning("No valid values at depth %s", str(depth))
                     continue
                 col = bgr2rgba(max_elem['colour'])
-                depth_dict[depth] = {'className': class_name, **max_elem, 'colour': col}
-                del depth_dict[depth]['roundedDepth']
-                del depth_dict[depth]['classCount']
+                kv_dict = {'className': class_name, **max_elem, 'colour': col}
+                del kv_dict['roundedDepth']
+                del kv_dict['classCount']
+                depth_dict[depth] = SimpleNamespace()
+                for key, val in kv_dict.items():
+                    setattr(depth_dict[depth], key, val)
 
         return depth_dict
 
@@ -340,7 +343,7 @@ class NVCLReader:
               'parentBorehole_uri', 'metadata_uri', 'genericSymbolizer'
             NB: (1) Depending on the WFS, not all fields will have values
                 (2) 'href' corresponds to 'gsmlp:identifier'
-                (3) 'x', 'y', 'z' x-coordinate, y-coordinate and elevation
+                (3) 'x', 'y', 'z' are x-coordinate, y-coordinate and elevation
                 (4) 'nvcl_id' is the GML 'id', used as an id in the NVCL services
 
             :returns: a list of dictionaries whose fields correspond to a response
