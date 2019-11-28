@@ -83,7 +83,7 @@ def bgr2rgba(bgr):
     ''' Converts BGR colour integer into an RGB tuple
 
     :param bgr: BGR colour integer
-    :returns: RGB float tuple
+    :returns: RGBA float tuple
     '''
     return ((bgr & 255)/255.0, ((bgr & 65280) >> 8)/255.0, (bgr >> 16)/255.0, 1.0)
 
@@ -155,7 +155,7 @@ class NVCLReader:
         :param height_resol: height resolution, float
         :param class_name: name of mineral class
         :returns: dict: key - depth, float; value - SimpleNamespace(
-                                                    'colour'= RGB colour string,
+                                                    'colour'= RGBA float tuple,
                                                     'className'= class name,
                                                     'classText'= mineral name )
         '''
