@@ -16,7 +16,7 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def setup_param_obj(self, max_boreholes, bbox={"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}):
-        ''' Create an parameter object for passing to NVCLReader constructor
+        ''' Create a parameter object for passing to NVCLReader constructor
  
         :param max_boreholes: maximum number of boreholes to download
         :returns: SimpleNamespace() object containing parameters
@@ -178,6 +178,8 @@ class TestNVCLReader(unittest.TestCase):
     @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_bbox_wfs(self, mock_wfs):
         ''' Test bounding box precision of selecting boreholes
+            There are two boreholes in the test data: one is just within
+            the bounding box, the other is just outside
         '''
         wfs_obj = mock_wfs.return_value
         wfs_obj.getfeature.return_value = Mock()
