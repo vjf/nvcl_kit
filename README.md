@@ -32,7 +32,7 @@ if not reader.wfs:
 bh_list = reader.get_boreholes_list()
 ```
 
-**4. Call get_nvcl_id_list() to get a list of NVCL borehole ids
+**4. Call get_nvcl_id_list() to get a list of NVCL borehole ids**
 
 ```python
 nvcl_id_list = reader.get_nvcl_id_list()
