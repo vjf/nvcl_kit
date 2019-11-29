@@ -68,8 +68,8 @@ for ild in imagelog_data_list:
         bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
         # Print out the colour, mineral and class name at each depth
         for depth in bh_data:
-            print("At ", depth, "my class, mineral, colour is", bh_data[depth]['className'],
-                  bh_data[depth]['classText'], bh_data[depth]['colour'])
+            print("At ", depth, "my class, mineral, colour is", bh_data[depth].className,
+                  bh_data[depth].classText, bh_data[depth].colour)
 ```
 
 **7. Using the NVCL ids from Step 5, you can also call get_spectrallog_data() and get_profilometer_data()**
