@@ -24,7 +24,7 @@ from http.client import HTTPException
 
 
 LOG_LVL = logging.INFO
-''' Initialise debug level to minimal debugging
+''' Initialise debug level
 '''
 
 # Set up debugging
@@ -104,29 +104,53 @@ class NVCLReader:
         OR call get_imagelog_data()
     '''
 
-    def __init__(self, param_obj, wfs=None):
+    def __init__(self, param_obj, wfs=None, log_lvl=None):
         '''
         :param param_obj: SimpleNamespace() object with parameters
-        Fields are: NVCL_URL, WFS_URL, WFS_VERSION, BOREHOLE_CRS, BBOX 
-                    & MAX_BOREHOLES
+        Fields are: 
+          NVCL_URL - URL of MVCL service
+          WFS_URL - URL of WFS service, GeoSciML V4.1 BoreholeView
+          WFS_VERSION - (optional - default "1.1.0")
+          BOREHOLE_CRS - (optional - default "EPSG:4283")
+          BBOX - (optional - default {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}) bounding box in EPSG:4283, only boreholes within box are retrieved
+          MAX_BOREHOLES - (optional - default 0) Maximum number of boreholes to retrieve. If < 1 then all boreholes are loaded
+
         e.g.
         from types import SimpleNamespace
         param_obj = SimpleNamespace()
+        # Uses EPSG:4283
         param_obj.BBOX = { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
         param_obj.WFS_URL = "http://blah.blah.blah/geoserver/wfs"
-        param_obj.BOREHOLE_CRS = "EPSG:4283"
-        param_obj.WFS_VERSION = "1.1.0"
         param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
         param_obj.MAX_BOREHOLES = 20
 
         :param wfs: optional owslib 'WebFeatureService' object
+        :param log_lvl: optional logging level (see 'logging' package),
+                        default is logging.INFO
 
         NOTE: Check if 'wfs' is not 'None' to see if this instance initialised properly
 
         '''
+        # Set log level
+        if log_lvl:
+            LOGGER.setLevel(log_lvl)
         self.param_obj = param_obj
         self.wfs = None
         self.borehole_list = []
+        if not hasattr(self.param_obj, 'BBOX'):
+            self.param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
+        if not hasattr(self.param_obj, 'WFS_URL'):
+            LOGGER.warning("'WFS_URL' parameter is missing")
+            return
+        if not hasattr(self.param_obj, 'NVCL_URL'):
+            LOGGER.warning("'NVCL_URL' parameter is missing")
+            return
+        if not hasattr(self.param_obj, 'BOREHOLE_CRS'):
+            self.param_obj.BOREHOLE_CRS = "EPSG:4283"
+        if not hasattr(self.param_obj, 'WFS_VERSION'):
+            self.param_obj.WFS_VERSION = "1.1.0"
+        if not hasattr(self.param_obj, 'MAX_BOREHOLES'):
+            self.param_obj.MAX_BOREHOLES = 0
         if wfs is None:
             try:
                 self.wfs = WebFeatureService(self.param_obj.WFS_URL,
