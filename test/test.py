@@ -5,6 +5,7 @@ from unittest.mock import patch, Mock
 from requests.exceptions import Timeout, RequestException
 from owslib.util import ServiceException
 from http.client import HTTPException
+import logging
 
 from types import SimpleNamespace
 
@@ -15,20 +16,63 @@ MAX_BOREHOLES = 20
 class TestNVCLReader(unittest.TestCase):
 
 
-    def setup_param_obj(self, max_boreholes, bbox={"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}):
+    def setup_param_obj(self, max_boreholes=None, bbox=None):
         ''' Create a parameter object for passing to NVCLReader constructor
  
         :param max_boreholes: maximum number of boreholes to download
         :returns: SimpleNamespace() object containing parameters
         '''
         param_obj = SimpleNamespace()
-        param_obj.BBOX = bbox
         param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
-        param_obj.BOREHOLE_CRS = "EPSG:4283"
-        param_obj.WFS_VERSION = "1.1.0"
         param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
-        param_obj.MAX_BOREHOLES = max_boreholes
+        if bbox:
+            param_obj.BBOX = bbox
+        if max_boreholes:
+            param_obj.MAX_BOREHOLES = max_boreholes
         return param_obj
+
+
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
+    def test_logging_level(self, mock_wfs):
+        ''' Test the 'log_lvl' parameter in the constructor
+        '''
+        # Use an empty response
+        wfs_obj = mock_wfs.return_value
+        wfs_obj.getfeature.return_value = Mock()
+        with open('empty_wfs.txt') as fp:
+            wfs_resp_str = fp.readline()
+            wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str
+            with self.assertLogs('nvcl_kit.reader', level='DEBUG') as nvcl_log:
+                param_obj = SimpleNamespace()
+                param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+                param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+                rdr = NVCLReader(param_obj, log_lvl=logging.DEBUG)
+                self.assertIn("_fetch_boreholes_list(0)", nvcl_log.output[0])
+         
+
+
+    def test_missing_wfs_param(self):
+        ''' Tests that if it is missing 'WFS_URL' parameter it issues a
+            warning message and returns wfs attribute as None
+        '''
+        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
+            param_obj = SimpleNamespace()
+            param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+            rdr = NVCLReader(param_obj)
+            self.assertIn("'WFS_URL' parameter is missing", nvcl_log.output[0])
+            self.assertEqual(rdr.wfs, None)
+
+
+    def test_missing_nvcl_param(self):
+        ''' Tests that if it is missing 'NVCL_URL' parameter it issues a
+            warning message and returns wfs attribute as None
+        '''
+        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
+            param_obj = SimpleNamespace()
+            param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+            rdr = NVCLReader(param_obj)
+            self.assertIn("'NVCL_URL' parameter is missing", nvcl_log.output[0])
+            self.assertEqual(rdr.wfs, None)
 
 
     def wfs_exception_tester(self, mock_wfs, excep, msg):
@@ -44,7 +88,7 @@ class TestNVCLReader(unittest.TestCase):
         wfs_obj.getfeature.return_value = Mock()
         wfs_obj.getfeature.return_value.read.side_effect = excep
         with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = self.setup_param_obj(MAX_BOREHOLES)
+            param_obj = self.setup_param_obj(max_boreholes=MAX_BOREHOLES)
             rdr = NVCLReader(param_obj)
             self.assertIn(msg, nvcl_log.output[0])
             self.assertEqual(rdr.wfs, None)
@@ -72,7 +116,7 @@ class TestNVCLReader(unittest.TestCase):
         wfs_obj.getfeature.return_value = Mock()
         wfs_obj.getfeature.return_value.read.side_effect = excep
         with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = self.setup_param_obj(MAX_BOREHOLES)
+            param_obj = self.setup_param_obj(max_boreholes=MAX_BOREHOLES)
             rdr = NVCLReader(param_obj)
             l = rdr.get_boreholes_list()
             self.assertIn(msg, nvcl_log.output[0])
@@ -97,7 +141,7 @@ class TestNVCLReader(unittest.TestCase):
         with open('empty_wfs.txt') as fp:
             wfs_resp_str = fp.readline()
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str
-            param_obj = self.setup_param_obj(MAX_BOREHOLES)
+            param_obj = self.setup_param_obj(max_boreholes=MAX_BOREHOLES)
             rdr = NVCLReader(param_obj)
             l = rdr.get_boreholes_list()
             self.assertEqual(l, [])
@@ -117,7 +161,7 @@ class TestNVCLReader(unittest.TestCase):
             wfs_resp_list = fp.readlines()
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
-            param_obj = self.setup_param_obj(MAX_BOREHOLES)
+            param_obj = self.setup_param_obj(max_boreholes=MAX_BOREHOLES)
             rdr = NVCLReader(param_obj)
             l = rdr.get_boreholes_list()
             self.assertEqual(len(l), MAX_BOREHOLES)
@@ -136,7 +180,7 @@ class TestNVCLReader(unittest.TestCase):
             wfs_resp_list = fp.readlines()
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
-            param_obj = self.setup_param_obj(0)
+            param_obj = self.setup_param_obj()
             rdr = NVCLReader(param_obj)
             l = rdr.get_boreholes_list()
             self.assertEqual(len(l), 102)
@@ -187,7 +231,7 @@ class TestNVCLReader(unittest.TestCase):
             wfs_resp_list = fp.readlines()
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
-            param_obj = self.setup_param_obj(0, bbox={"west": 146.0,"south": -41.2,"east": 147.2,"north": -40.5})
+            param_obj = self.setup_param_obj(max_boreholes=0, bbox={"west": 146.0,"south": -41.2,"east": 147.2,"north": -40.5})
             rdr = NVCLReader(param_obj)
             l = rdr.get_boreholes_list()
             self.assertEqual(len(l), 1)
@@ -206,7 +250,7 @@ class TestNVCLReader(unittest.TestCase):
             wfs_resp_list = fp.readlines()
             wfs_resp_str = ''.join(wfs_resp_list)
             wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
-            param_obj = self.setup_param_obj(0)
+            param_obj = self.setup_param_obj()
             with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
                 rdr = NVCLReader(param_obj)
                 self.assertIn('Cannot parse collar coordinates', nvcl_log.output[0])
@@ -225,7 +269,7 @@ class TestNVCLReader(unittest.TestCase):
                 wfs_resp_list = fp.readlines()
                 wfs_resp_str = ''.join(wfs_resp_list)
                 wfs_obj.getfeature.return_value.read.return_value = wfs_resp_str.rstrip('\n')
-                param_obj = self.setup_param_obj(0)
+                param_obj = self.setup_param_obj()
                 rdr = NVCLReader(param_obj)
         return rdr 
    
@@ -325,7 +369,6 @@ class TestNVCLReader(unittest.TestCase):
                 self.assertEqual(spectral_data_list[0].wavelengths[1], 384.0)
 
 
-
     def test_spectrallog_exception(self):
         ''' Tests exception handling in get_spectrallog_data()
         '''
@@ -361,7 +404,6 @@ class TestNVCLReader(unittest.TestCase):
         rdr = self.setup_reader()
         self.urllib_exception_tester(HTTPException, rdr.get_borehole_data, 'HTTP Error:', {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
         self.urllib_exception_tester(OSError, rdr.get_borehole_data, 'OS Error:',  {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
-
 
 
 if __name__ == '__main__':
