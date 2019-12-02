@@ -132,25 +132,76 @@ class NVCLReader:
 
         '''
         # Set log level
-        if log_lvl:
+        if log_lvl and isinstance(log_lvl, int):
             LOGGER.setLevel(log_lvl)
-        self.param_obj = param_obj
         self.wfs = None
         self.borehole_list = []
+
+        # Check param_obj
+        if not isinstance(param_obj, SimpleNamespace):
+            LOGGER.warning("'param_obj' is not a SimpleNamespace() object")
+            return
+        self.param_obj = param_obj
+
+        # If BBOX not defined, use default
         if not hasattr(self.param_obj, 'BBOX'):
             self.param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
+        else:
+            if not isinstance(self.param_obj.BBOX, dict):
+                LOGGER.warning('BBOX is not a dict')
+                return
+            # Check BBOX dict values
+            for dir in ["west", "south", "east", "north"]:
+                if dir not in self.param_obj.BBOX:
+                    LOGGER.warning("BBOX['%s'] is missing", dir)
+                    return
+                try:
+                    float(self.param_obj.BBOX[dir])
+                except ValueError:
+                    LOGGER.warning("BBOX['%s'] is not a float", dir)
+                    return
+
+        # Check WFS_URL value
         if not hasattr(self.param_obj, 'WFS_URL'):
             LOGGER.warning("'WFS_URL' parameter is missing")
             return
+        if not isinstance(self.param_obj.WFS_URL, str):
+            LOGGER.warning("'WFS_URL' parameter is not a string")
+            return
+
+        # Check NVCL_URL value
         if not hasattr(self.param_obj, 'NVCL_URL'):
             LOGGER.warning("'NVCL_URL' parameter is missing")
             return
+        if not isinstance(self.param_obj.NVCL_URL, str):
+            LOGGER.warning("'NVCL_URL' parameter is not a string")
+            return
+
+        # Roughly check BOREHOLE_CRS EPSG: value
         if not hasattr(self.param_obj, 'BOREHOLE_CRS'):
             self.param_obj.BOREHOLE_CRS = "EPSG:4283"
+        elif not isinstance(self.param_obj.BOREHOLE_CRS, str) or \
+             "EPSG:" not in self.param_obj.BOREHOLE_CRS.upper() or \
+             not self.param_obj.BOREHOLE_CRS[-4:].isnumeric():
+            LOGGER.warning("'BOREHOLE_CRS' parameter is not an EPSG string")
+            return
+
+        # Roughly check WFS_VERSION value
         if not hasattr(self.param_obj, 'WFS_VERSION'):
             self.param_obj.WFS_VERSION = "1.1.0"
+        elif not isinstance(self.param_obj.WFS_VERSION, str) or \
+             not self.param_obj.WFS_VERSION[0].isdigit():
+            LOGGER.warning("'WFS_VERSION' parameter is not a string")
+            return
+
+        # Check MAX_BOREHOLES value
         if not hasattr(self.param_obj, 'MAX_BOREHOLES'):
             self.param_obj.MAX_BOREHOLES = 0
+        if not isinstance(self.param_obj.MAX_BOREHOLES, int):
+            LOGGER.warning("'MAX_BOREHOLES' parameter is not an integer")
+            return
+
+        # If owslib wfs is not supplied
         if wfs is None:
             try:
                 self.wfs = WebFeatureService(self.param_obj.WFS_URL,
@@ -396,14 +447,16 @@ class NVCLReader:
         # Can't filter for BBOX and nvclCollection==true at the same time
         # [owslib's BBox uses 'ows:BoundingBox', not supported in WFS]
         # so is best to do the BBOX manually
-        filter_ = PropertyIsLike(propertyname='gsmlp:nvclCollection', literal='true', wildCard='*')
+        filter_ = PropertyIsLike(propertyname='gsmlp:nvclCollection', literal='true', matchCase=False)
         # filter_2 = BBox([Param.BBOX['west'], Param.BBOX['south'], Param.BBOX['east'],
         #                  Param.BBOX['north']], crs=Param.BOREHOLE_CRS)
         # filter_3 = And([filter_, filter_2])
         filterxml = etree.tostring(filter_.toXML()).decode("utf-8")
         response_str = ''
         try:
-            response = self.wfs.getfeature(typename='gsmlp:BoreholeView', filter=filterxml)
+            response = self.wfs.getfeature(typename='gsmlp:BoreholeView',
+                                           filter=filterxml,
+                                           srsname=self.param_obj.BOREHOLE_CRS)
             response_str = bytes(response.read(), encoding='ascii')
         except (RequestException, HTTPException, ServiceException, OSError) as exc:
             LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
@@ -416,7 +469,7 @@ class NVCLReader:
         for child in root.findall('./*/gsmlp:BoreholeView', NS):
             nvcl_id = child.attrib.get('{'+NS['gml']+'}id', '').split('.')[-1:][0]
             is_nvcl = child.findtext('./gsmlp:nvclCollection', default="false", namespaces=NS)
-            if is_nvcl == "true" and nvcl_id.isdigit():
+            if is_nvcl.lower() == "true":
                 borehole_dict = {'nvcl_id': nvcl_id}
 
                 # Finds borehole collar x,y assumes units are degrees
