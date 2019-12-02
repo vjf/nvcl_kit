@@ -48,96 +48,140 @@ class TestNVCLReader(unittest.TestCase):
                 param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
                 rdr = NVCLReader(param_obj, log_lvl=logging.DEBUG)
                 self.assertIn("_fetch_boreholes_list(0)", nvcl_log.output[0])
-         
+
+
+    def try_input_param(self, param_obj, msg):
+        ''' Used to test variations in erroneous constructor input parameters
+            :param param_obj: input parameter object
+            :param msg: warning messge produced
+        '''
+        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
+            rdr = NVCLReader(param_obj)
+            self.assertIn(msg, nvcl_log.output[0])
+            self.assertEqual(rdr.wfs, None)
+
 
     def test_bad_constr_param(self):
         ''' Tests that if it has bad 'param_obj' parameter it issues a
             warning message and returns wfs attribute as None
         '''
-        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            rdr = NVCLReader({'ffgfg':45})
-            self.assertIn("'param_obj' is not a SimpleNamespace() object", nvcl_log.output[0])
-            self.assertEqual(rdr.wfs, None)
+        self.try_input_param({'ffgf':43},
+                              "'param_obj' is not a SimpleNamespace() object")
+
+
+    def test_bad_crs_param(self):
+        ''' Tests that if has a bad 'BOREHOLE_CRS' parameter it issues a
+            warning message and returns wfs attribute as None
+        '''
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.BOREHOLE_CRS = "blah"
+        self.try_input_param(param_obj, "'BOREHOLE_CRS' parameter is not an EPSG string")
+
+
+    def test_bad_wfs_ver_param1(self):
+        ''' Tests that if has a bad 'WFS_VERSION' parameter it issues a
+            warning message and returns wfs attribute as None
+        '''
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.WFS_VERSION = 1.1
+        self.try_input_param(param_obj, "'WFS_VERSION' parameter is not a numeric string")
+
+
+    def test_bad_wfs_ver_param2(self):
+        ''' Tests that if has a badly formatted 'WFS_VERSION' parameter it
+            issues a warning message and returns wfs attribute as None
+        '''
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.WFS_VERSION = "v1.1"
+        self.try_input_param(param_obj, "'WFS_VERSION' parameter is not a numeric string")
 
 
     def test_bad_maxbh_param(self):
         ''' Tests that if has a bad 'MAX_BOREHOLES' parameter it issues a
             warning message and returns wfs attribute as None
         '''
-        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = SimpleNamespace()
-            param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
-            param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
-            param_obj.MAX_BOREHOLES = "blah"
-            rdr = NVCLReader(param_obj)
-            self.assertIn("'MAX_BOREHOLES' parameter is not an integer", nvcl_log.output[0])
-            self.assertEqual(rdr.wfs, None)
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.MAX_BOREHOLES = "blah"
+        self.try_input_param(param_obj, "'MAX_BOREHOLES' parameter is not an integer")
 
 
     def test_bad_bbox_param1(self):
         ''' Tests that if has a bad 'BBOX' parameter it issues a
             warning message and returns wfs attribute as None
         '''
-        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = SimpleNamespace()
-            param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
-            param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
-            param_obj.BBOX = "blah"
-            rdr = NVCLReader(param_obj)
-            self.assertIn("'BBOX' parameter is not a dict", nvcl_log.output[0])
-            self.assertEqual(rdr.wfs, None)
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.BBOX = "blah"
+        self.try_input_param(param_obj, "'BBOX' parameter is not a dict")
 
 
     def test_bad_bbox_param2(self):
         ''' Tests that if it is missing part of 'BBOX' parameter it issues a
             warning message and returns wfs attribute as None
         '''
-        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = SimpleNamespace()
-            param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
-            param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
-            param_obj.BBOX = { 'north': 0, 'west':90, 'east':180 }
-            rdr = NVCLReader(param_obj)
-            self.assertIn("BBOX['south'] parameter is missing", nvcl_log.output[0])
-            self.assertEqual(rdr.wfs, None)
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.BBOX = { 'north': 0, 'west':90, 'east':180 }
+        self.try_input_param(param_obj, "BBOX['south'] parameter is missing")
 
 
     def test_bad_bbox_param3(self):
         ''' Tests that if part of 'BBOX' parameter is not a number it issues a
             warning message and returns wfs attribute as None
         '''
-        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = SimpleNamespace()
-            param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
-            param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
-            param_obj.BBOX = { 'south': '-40', 'north': 0, 'west': 90, 'east':180 }
-            rdr = NVCLReader(param_obj)
-            self.assertIn("BBOX['south'] parameter is not a number", nvcl_log.output[0])
-            self.assertEqual(rdr.wfs, None)
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.BBOX = { 'south': '-40', 'north': 0, 'west': 90, 'east':180 }
+        self.try_input_param(param_obj, "BBOX['south'] parameter is not a number")
 
 
     def test_missing_wfs_param(self):
         ''' Tests that if it is missing 'WFS_URL' parameter it issues a
             warning message and returns wfs attribute as None
         '''
-        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = SimpleNamespace()
-            param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
-            rdr = NVCLReader(param_obj)
-            self.assertIn("'WFS_URL' parameter is missing", nvcl_log.output[0])
-            self.assertEqual(rdr.wfs, None)
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        self.try_input_param(param_obj, "'WFS_URL' parameter is missing")
+
+
+    def test_bad_wfs_param(self):
+        ''' Tests that if it has a bad 'WFS_URL' parameter it issues a
+            warning message and returns wfs attribute as None
+        '''
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = None
+        self.try_input_param(param_obj, "'WFS_URL' parameter is not a string")
 
 
     def test_missing_nvcl_param(self):
         ''' Tests that if it is missing 'NVCL_URL' parameter it issues a
             warning message and returns wfs attribute as None
         '''
-        with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
-            param_obj = SimpleNamespace()
-            param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
-            rdr = NVCLReader(param_obj)
-            self.assertIn("'NVCL_URL' parameter is missing", nvcl_log.output[0])
-            self.assertEqual(rdr.wfs, None)
+        param_obj = SimpleNamespace()
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        self.try_input_param(param_obj, "'NVCL_URL' parameter is missing")
+
+
+    def test_bad_nvcl_param(self):
+        ''' Tests that if it has a bad 'NVCL_URL' parameter it issues a
+            warning message and returns wfs attribute as None
+        '''
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = None
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        self.try_input_param(param_obj, "'NVCL_URL' parameter is not a string")
 
 
     def wfs_exception_tester(self, mock_wfs, excep, msg):
