@@ -148,17 +148,16 @@ class NVCLReader:
             self.param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
         else:
             if not isinstance(self.param_obj.BBOX, dict):
-                LOGGER.warning('BBOX is not a dict')
+                LOGGER.warning("'BBOX' parameter is not a dict")
                 return
             # Check BBOX dict values
             for dir in ["west", "south", "east", "north"]:
                 if dir not in self.param_obj.BBOX:
-                    LOGGER.warning("BBOX['%s'] is missing", dir)
+                    LOGGER.warning("BBOX['%s'] parameter is missing", dir)
                     return
-                try:
-                    float(self.param_obj.BBOX[dir])
-                except ValueError:
-                    LOGGER.warning("BBOX['%s'] is not a float", dir)
+                if not isinstance(self.param_obj.BBOX[dir], float) and \
+                   not isinstance(self.param_obj.BBOX[dir], int):
+                    LOGGER.warning("BBOX['%s'] parameter is not a number", dir)
                     return
 
         # Check WFS_URL value
