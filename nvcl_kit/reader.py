@@ -190,7 +190,7 @@ class NVCLReader:
             self.param_obj.WFS_VERSION = "1.1.0"
         elif not isinstance(self.param_obj.WFS_VERSION, str) or \
              not self.param_obj.WFS_VERSION[0].isdigit():
-            LOGGER.warning("'WFS_VERSION' parameter is not a string")
+            LOGGER.warning("'WFS_VERSION' parameter is not a numeric string")
             return
 
         # Check MAX_BOREHOLES value
