@@ -17,7 +17,7 @@ param.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
 # URL of NVCL service
 param.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
 
-# Optional bounding box to search for boreholes using WFS, units must be EPSG:4283 degrees
+# Optional bounding box to search for boreholes using WFS, default units are EPSG:4283 degrees
 param.BBOX = {"west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
 
 # Optional maximum number of boreholes to fetch, default is no limit
