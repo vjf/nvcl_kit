@@ -238,17 +238,8 @@ class NVCLReader:
         url = self.param_obj.NVCL_URL + '/getDownsampledData.html'
         params = {'logid' : log_id, 'outputformat': 'json', 'startdepth': 0.0,
                   'enddepth': 10000.0, 'interval': height_resol}
-        enc_params = urllib.parse.urlencode(params).encode('ascii')
-        req = urllib.request.Request(url, enc_params)
-        json_data = b''
-        try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
-                json_data = response.read()
-        except HTTPException as he_exc:
-            LOGGER.warning('HTTP Error: %s', he_exc)
-            return OrderedDict()
-        except OSError as os_exc:
-            LOGGER.warning("OS Error: %s", str(os_exc))
+        json_data = self._get_response_str(url, params)
+        if not json_data:
             return OrderedDict()
         LOGGER.debug('json_data = %s', json_data)
         meas_list = []
@@ -282,6 +273,22 @@ class NVCLReader:
         return depth_dict
 
 
+    def _get_log_collection(self, nvcl_id, use_mosaic=False):
+        ''' Retrieves log details for a particular borehole
+
+        :param nvcl_id: NVCL 'holeidentifier' parameter,
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :param mosaic_svc: NVCL 'mosaic_svc' parameter, boolean
+        :returns: the response as a byte string or an empty string upon error
+        '''
+        url = self.param_obj.NVCL_URL + '/getLogCollection.html'
+        mosaic_svc = 'no'
+        if use_mosaic:
+            mosaic_svc = 'yes'
+        params = {'holeidentifier' : nvcl_id, 'mosaic_svc': mosaic_svc}
+        return self._get_response_str(url, params)
+
+
     def _get_dataset_collection(self, nvcl_id):
         ''' Retrieves a dataset for a particular borehole
 
@@ -291,6 +298,16 @@ class NVCLReader:
         '''
         url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
         params = {'holeidentifier' : nvcl_id}
+        return self._get_response_str(url, params)
+
+
+    def _get_response_str(self, url, params):
+        ''' Performs a GET request with url and parameters and returns the
+            response as a string
+        :param url: URL of request, string
+        :param params: parameters, in dictionary form
+        :return: response, string; returns an empty string upon error
+        '''
         enc_params = urllib.parse.urlencode(params).encode('ascii')
         req = urllib.request.Request(url, enc_params)
         response_str = b''
@@ -304,6 +321,55 @@ class NVCLReader:
             LOGGER.warning('OS Error: %s', str(os_exc))
             return ""
         return response_str
+
+
+    def get_datasetid_list(self, nvcl_id):
+        ''' Retrieves a list of dataset ids
+        :param nvcl_id: NVCL 'holeidentifier' parameter,
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :returns list of dataset ids
+        '''
+        response_str = self._get_dataset_collection(nvcl_id)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        datasetid_list = []
+        for child in root.findall('./Dataset'):
+            dataset_id = child.findtext('./DatasetID', default=None)
+            if dataset_id:
+                datasetid_list.append(dataset_id)
+        return datasetid_list
+
+
+    def get_dataset_data(self, nvcl_id):
+        ''' Retrieves a list of dataset ids
+        :param nvcl_id: NVCL 'holeidentifier' parameter,
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+       :returns list of dataset ids
+        '''
+        response_str = self._get_dataset_collection(nvcl_id)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        dataset_list = []
+        for child in root.findall('./Dataset'):
+            # Compulsory
+            dataset_id = child.findtext('./DatasetID', default=None)
+            dataset_name = child.findtext('./DatasetName', default=None)
+            if not dataset_id or not dataset_name:
+                continue
+            # Optional
+            dataset_obj = SimpleNamespace(dataset_id=dataset_id,
+                                          dataset_name=dataset_name)
+            for label, key in [('borehole_uri', './boreholeURI'),
+                                ('tray_id', './trayID'),
+                                ('section_id', './sectionID'),
+                                ('domain_id', './domainID')]:
+                val = child.findtext(key, default=None)
+                if val:
+                    setattr(dataset_obj, label, val)
+            dataset_list.append(dataset_obj)
+        return dataset_list
 
 
     def get_imagelog_data(self, nvcl_id):
@@ -425,6 +491,7 @@ class NVCLReader:
         '''
         return self.borehole_list  
 
+
     def get_nvcl_id_list(self):
         '''
         Returns a list of NVCL ids, can be used as input to other 'nvcl_kit' API
@@ -433,6 +500,7 @@ class NVCLReader:
         :return: a list of NVCL id strings
         '''
         return [bh['nvcl_id'] for bh in self.borehole_list]
+
 
     def _fetch_borehole_list(self, max_boreholes):
         ''' Returns a list of WFS borehole data within bounding box, but only NVCL boreholes

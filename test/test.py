@@ -455,6 +455,42 @@ class TestNVCLReader(unittest.TestCase):
         self.urllib_exception_tester(HTTPException, rdr.get_profilometer_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
         self.urllib_exception_tester(OSError, rdr.get_profilometer_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
+
+    def test_dataset_list(self):
+        ''' Test get_dataset_data()
+        '''
+        rdr = self.setup_reader()
+        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+            open_obj = mock_request.return_value
+            with open('dataset_coll.txt') as fp:
+                resp_list = fp.readlines()
+                resp_str = ''.join(resp_list)
+                open_obj.__enter__.return_value.read.return_value = resp_str
+                dataset_id_list = rdr.get_datasetid_list("blah")
+                self.assertEqual(len(dataset_id_list), 1)
+                self.assertEqual(dataset_id_list[0], 'a4c1ed7f-1e87-444a-90ae-3fe5abf9081')
+
+
+    def test_dataset_data(self):
+        ''' Test get_dataset_data()
+        '''
+        rdr = self.setup_reader()
+        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+            open_obj = mock_request.return_value
+            with open('dataset_coll.txt') as fp:
+                resp_list = fp.readlines()
+                resp_str = ''.join(resp_list)
+                open_obj.__enter__.return_value.read.return_value = resp_str
+                dataset_data_list = rdr.get_dataset_data("blah")
+                self.assertEqual(len(dataset_data_list), 1)
+                ds = dataset_data_list[0]
+                self.assertEqual(ds.dataset_id, 'a4c1ed7f-1e87-444a-90ae-3fe5abf9081')
+                self.assertEqual(ds.dataset_name, '6315_HP4_Mt_Block')
+                self.assertEqual(ds.borehole_uri, 'http://www.blah.blah.gov.au/resource/feature/blah/borehole/6315')
+                self.assertEqual(ds.tray_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
+                self.assertEqual(ds.section_id, '6c6b3980-8ef3-4d4e-a509-996e4f97973')
+                self.assertEqual(ds.domain_id, '1186d6e5-3102-4e60-a077-e17b8ea1079')
+
         
     def test_spectrallog_data(self):
         ''' Test get_spectrallog_data()

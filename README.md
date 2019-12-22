@@ -113,4 +113,21 @@ for pdl in profilometer_data_list:
           pdl.sample_count)
 ```
 
+**8. Option: get a list of dataset ids**
 
+```python
+datasetid_list = reader.get_datasetid_list(nvcl_id)
+```
+
+**9. Option: Get a list of datasets**
+
+```python
+dataset_data_list = reader.get_dataset_data(nvcl_id)
+for ds in dataset_data_list:
+    print(ds.dataset_id,
+          ds.dataset_name,
+          ds.borehole_uri,
+          ds.tray_id,
+          ds.section_id,
+          ds.domain_id)
+```
