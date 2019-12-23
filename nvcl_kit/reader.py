@@ -23,6 +23,11 @@ from owslib.util import ServiceException
 from http.client import HTTPException
 
 
+ENFORCE_IS_PUBLIC = True
+''' Enforce the 'is_public' flag , i.e. any data with 'is_public' set to 'false'
+    will be ignored
+'''
+
 LOG_LVL = logging.INFO
 ''' Initialise debug level
 '''
@@ -273,20 +278,78 @@ class NVCLReader:
         return depth_dict
 
 
-    def _get_log_collection(self, nvcl_id, use_mosaic=False):
-        ''' Retrieves log details for a particular borehole
+    def _get_log_collection(self, dataset_id, use_mosaic=False):
+        ''' Retrieves log details for a particular borehole's dataset
 
-        :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
-        :param mosaic_svc: NVCL 'mosaic_svc' parameter, boolean
+        :param dataset_id: dataset id parameter,
+                        the 'dataset_id' from each dict item retrieved from 'get_datasetid_list()' or 'get_dataset_data()'
+        :param mosaic_svc: NVCL 'mosaic_svc' parameter, if true retrieves mosaic
+                           data, else scalar; boolean
         :returns: the response as a byte string or an empty string upon error
         '''
         url = self.param_obj.NVCL_URL + '/getLogCollection.html'
         mosaic_svc = 'no'
         if use_mosaic:
             mosaic_svc = 'yes'
-        params = {'holeidentifier' : nvcl_id, 'mosaic_svc': mosaic_svc}
+        params = {'datasetid' : dataset_id, 'mosaic_svc': mosaic_svc}
         return self._get_response_str(url, params)
+
+
+    def get_logs_scalar(self, dataset_id):
+        ''' Retrieves a list of log objects for scalar plot service
+
+        :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, is_public, log_type, algorithm_id
+        On error returns empty list
+        '''
+        response_str = self._get_log_collection(dataset_id)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        log_list = []
+        for child in root.findall('./Log'):
+            log_id = child.findtext('./LogID', default=None)
+            log_name = child.findtext('./logName', default=None)
+            is_public = child.findtext('./ispublic', default=None)
+            if ENFORCE_IS_PUBLIC and is_public and is_public.upper() == 'FALSE':
+                continue
+            log_type = child.findtext('./logType', default=None)
+            algorithm_id = child.findtext('./algorithmoutID', default=None)
+            if log_id and log_name and log_type and algorithm_id:
+                log = SimpleNamespace(log_id=log_id,
+                                      log_name=log_name,
+                                      is_public=is_public,
+                                      log_type=log_type,
+                                      algorithm_id=algorithm_id)
+                log_list.append(log)
+        return log_list
+
+
+    def get_logs_mosaic(self, dataset_id):
+        ''' Retrieves a list of log objects for mosaic service
+
+        :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, sample_count
+        On error returns empty list
+        '''
+        response_str = self._get_log_collection(dataset_id, True)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        log_list = []
+        for child in root.findall('./Log'):
+            log_id = child.findtext('./LogID', default=None)
+            log_name = child.findtext('./LogName', default=None)
+            try:
+                sample_count = int(child.findtext('./SampleCount', default=0))
+            except ValueError:
+                sample_count = 0
+            if log_id and log_name:
+                log = SimpleNamespace(log_id=log_id,
+                                      log_name=log_name,
+                                      sample_count=sample_count)
+                log_list.append(log)
+        return log_list
 
 
     def _get_dataset_collection(self, nvcl_id):
@@ -341,11 +404,11 @@ class NVCLReader:
         return datasetid_list
 
 
-    def get_dataset_data(self, nvcl_id):
-        ''' Retrieves a list of dataset ids
+    def get_dataset_list(self, nvcl_id):
+        ''' Retrieves a list of dataset objects
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
-       :returns list of dataset ids
+       :returns list of SimpleNamespace objects, attributes are: dataset_id, dataset_name, borehole_uri, tray_id, section_id, domain_id
         '''
         response_str = self._get_dataset_collection(nvcl_id)
         if not response_str:
@@ -391,7 +454,8 @@ class NVCLReader:
             log_type = child.findtext('./logType', default='')
             log_id = child.findtext('./LogID', default='')
             alg_id = child.findtext('./algorithmoutID', default='')
-            if is_public == 'true' and log_name != '' and log_type != '' and log_id != '':
+            if (is_public == 'true' or not ENFORCE_IS_PUBLIC) and \
+                      log_name != '' and log_type != '' and log_id != '':
                 logid_list.append(SimpleNamespace(log_id=log_id, log_type=log_type, log_name=log_name, algorithmout_id=alg_id))
         return logid_list
 
