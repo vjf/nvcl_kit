@@ -122,12 +122,35 @@ datasetid_list = reader.get_datasetid_list(nvcl_id)
 **9. Option: Get a list of datasets**
 
 ```python
-dataset_data_list = reader.get_dataset_data(nvcl_id)
-for ds in dataset_data_list:
+dataset_list = reader.get_dataset_list(nvcl_id)
+for ds in dataset_list:
     print(ds.dataset_id,
           ds.dataset_name,
           ds.borehole_uri,
           ds.tray_id,
           ds.section_id,
           ds.domain_id)
+```
+
+
+**10. Using an element from 'datasetid_list' in Step 8 or 'ds.dataset_id' from Step 9, can retrieve log data**
+
+
+``` python
+log_list = reader.get_logs_scalar(ds.dataset_id)
+for log in log_list:
+    print(log.log_id,
+          log.log_name,
+          log.is_public,
+          log.log_type,
+          log..algrithm_id)
+```
+
+
+``` python
+log_list = reader.get_logs_mosaic(ds.dataset_id)
+for log in log_list:
+    print(log.log_id,
+          log.log_name,
+          log.sample_count)
 ```
