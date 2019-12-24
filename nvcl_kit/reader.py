@@ -364,6 +364,82 @@ class NVCLReader:
         return self._get_response_str(url, params)
 
 
+    def _get_mosaic(self, log_id, **options):
+        '''
+        :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
+        :param options: dict of optional parameters:
+                 width: number of column the images are to be displayed, default value=3
+                 startsampleno: the first sample image to be displayed, default value=0
+                 endsampleno: the last sample image to be displayed, default value=99999
+        '''
+        url = self.param_obj.NVCL_URL + '/mosaic.html'
+        params = {'logid' : log_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
+
+    def _get_mosaic_tray_thumbnail(self, dataset_id, log_id, **options):
+        '''
+        :param dataset_id: obtained through calling the getDatasetCollection service
+        :param logid: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes, with LogName equal Tray Thumbnail Images
+        :param options: dictonary of optional parameters:
+                  width: specify the number of column the images are to be displayed, default value=3
+                  startsampleno: the first sample image to be displayed, default value=0
+                  endsampleno: the last sample image to be displayed, default value=99999
+        '''
+        url = self.param_obj.NVCL_URL + '/mosaictraythumbnail.html'
+        params = {'datasetid': dataset_id, 'logid' : log_id, 'width': width, 'startsampleno': start_sampleno, 'endsampleno': end_sampleno}
+        return self._get_response_str(url, params)
+
+
+    def _get_display_tray_thumb(self, log_id, sample_no):
+        url = self.param_obj.NVCL_URL + '/Display_Tray_Thumb.html'
+        params = {'logid' : log_id, 'sampleno': sample_no}
+        return self._get_response_str(url, params)
+
+
+    def _get_image_tray_depth(self, log_id):
+        url = self.param_obj.NVCL_URL + '/getImageTrayDepth.html'
+        params = {'logid' : log_id}
+        return self._get_response_str(url, params)
+
+
+    def _get_plot_scalar(self, log_id, **options):
+        '''
+        :param log_id: obtained through calling the getLogCollection service with mosaicsvc URL parameter set to 'no'
+        :param options: a dict of options:
+               startdepth: the start depth of a borehole collar, defaultvalue = 0
+               enddepth: the end depth of a borehole collar, default value=99999
+               samplinginterval: the interval of the sampling, default value=1
+               width: the width of the image in pixel, default value=300
+               height: the height of the image in pixel, default value=600
+               graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+               legend: value= 1 or 0, 1 - indicates to show the legend, 0 to hide it, optional, default to 1
+        '''
+        url = self.param_obj.NVCL_URL + '/plotscalar.html'
+        params = {'logid' : log_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
+
+    def _get_plot_multi_scalar(self, log_id, **options):
+        '''
+        :param log_id: obtained through calling the getLogCollection service, with mosaicsvc URL parameter set to 'no' and up to 6 logid parameters are allowed
+        :param options: dictionary of optional parameters:
+                startdepth: the start depth of a borehole collar, default value=0
+                enddepth: the end depth of a borehole collar, default value=99999
+                samplinginterval: the interval of the sampling, default value=1
+                width: the width of the image in pixel, default value=300
+                height: the height of the image in pixel, default value=600
+                graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+                legend: value=yes or no, if yes - indicate to show the legend, default to yes
+        '''
+        url = self.param_obj.NVCL_URL + '/plotmultiscalar.html'
+        params = {'logid' : log_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
+
     def _get_response_str(self, url, params):
         ''' Performs a GET request with url and parameters and returns the
             response as a string
@@ -434,6 +510,15 @@ class NVCLReader:
             dataset_list.append(dataset_obj)
         return dataset_list
 
+
+    def get_mosaic_image(self, log_id, width, sampleno_start, sampleno_end):
+        pass
+
+    def get_tray_thumb(self, log_id, sample_no):
+        pass
+
+    def get_tray_depths(self, log_id):
+        pass
 
     def get_imagelog_data(self, nvcl_id):
         ''' Retrieves a set of image log data for a particular borehole
