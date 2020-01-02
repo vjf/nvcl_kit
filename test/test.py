@@ -361,7 +361,7 @@ class TestNVCLReader(unittest.TestCase):
         :returns: NVLKit() object
         '''
         rdr = None
-        with unittest.mock.patch('nvcl_kit.reader.WebFeatureService') as mock_wfs:
+        with unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True) as mock_wfs:
             wfs_obj = mock_wfs.return_value
             wfs_obj.getfeature.return_value = Mock()
             with open('full_wfs3.txt') as fp:
@@ -375,7 +375,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_imagelog_data()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -396,11 +396,11 @@ class TestNVCLReader(unittest.TestCase):
         :param msg: warning message to test for
         :param params: dictionary of parameters for 'fn'
         '''
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             open_obj.__enter__.return_value.read.side_effect = exc
             open_obj.__enter__.return_value.read.return_value = '' 
-            with self.assertLogs('nvcl_kit.reader', level='WARN') as nvcl_log:
+            with self.assertLogs('nvcl_kit.svc_interface', level='WARN') as nvcl_log:
                 imagelog_data_list = fn(**params)
                 self.assertIn(msg, nvcl_log.output[0])
     
@@ -417,7 +417,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_profilometer_data()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -444,7 +444,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Tests get_logs_scalar()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('logcoll_scalar.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -461,7 +461,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Tests get_logs_scalar() with an empty response
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('logcoll_empty.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -482,7 +482,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Tests get_logs_mosaic()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('logcoll_mosaic.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -497,7 +497,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Tests get_logs_mosaic() with an empty response
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('logcoll_empty.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -517,7 +517,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_datasetid_list()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -530,7 +530,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_datasetid_list() with an empty response
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll_empty.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -550,7 +550,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_dataset_list()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -568,7 +568,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_dataset_list() with an empty response
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll_empty.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -589,7 +589,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_spectrallog_data()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('dataset_coll.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
@@ -617,7 +617,7 @@ class TestNVCLReader(unittest.TestCase):
         ''' Test get_borehole_data()
         '''
         rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen') as mock_request:
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('bh_data.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
