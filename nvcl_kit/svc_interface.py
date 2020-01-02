@@ -28,8 +28,14 @@ if not LOGGER.hasHandlers():
 
 
 class ServiceInterface:
+    ''' Call the web APIs for NVCL services
+    '''
 
     def __init__(self, nvcl_url, timeout):
+        '''
+        :param nvcl_url: URL of the NVCL service
+        :param timeout: timeout value for connection to NVCL service (seconds)
+        '''
         self.NVCL_URL = nvcl_url
         self.TIMEOUT = timeout
 
@@ -46,7 +52,8 @@ class ServiceInterface:
 
 
     def get_mosaic(self, log_id, **options):
-        '''
+        ''' Retrieves images of NVCL core trays
+
         :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
         :param options: optional parameters:
                  width: number of column the images are to be displayed, default value=3
@@ -60,7 +67,8 @@ class ServiceInterface:
 
 
     def get_mosaic_tray_thumbnail(self, dataset_id, log_id, **options):
-        '''
+        ''' Retrieves thumbnail images of NVCL core trays
+
         :param dataset_id: obtained through calling the getDatasetCollection service
         :param logid: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes, with LogName equal Tray Thumbnail Images
         :param options: optional parameters:
@@ -74,19 +82,31 @@ class ServiceInterface:
 
 
     def get_display_tray_thumb(self, log_id, sample_no):
+        ''' Gets thumbnail images of NVCL core trays
+
+        :param log_id: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes
+        :param sample_no: sample number of the image to retrieve from database  
+        '''
         url = self.NVCL_URL + '/Display_Tray_Thumb.html'
         params = {'logid' : log_id, 'sampleno': sample_no}
         return self._get_response_str(url, params)
 
 
     def get_image_tray_depth(self, log_id):
+        ''' Generates a list of image tray collection with start and end depth
+            values for each image tray.
+
+        :param logid: obtained through calling the getLogCollection service with mosaicsvc set to yes, select the LogId with LogName equal Tray Thumbnail Images or Tray Images
+        '''
         url = self.NVCL_URL + '/getImageTrayDepth.html'
         params = {'logid' : log_id}
         return self._get_response_str(url, params)
 
 
     def get_plot_scalar(self, log_id, **options):
-        '''
+        ''' Uses JFeeChart Java chart library to draw a plot of the product and
+            return the plot as an image in PNG format.
+
         :param log_id: obtained through calling the getLogCollection service with mosaicsvc URL parameter set to 'no'
         :param options: a dict of options:
                startdepth: the start depth of a borehole collar, defaultvalue = 0
@@ -104,7 +124,8 @@ class ServiceInterface:
 
 
     def get_plot_multi_scalar(self, log_id, **options):
-        '''
+        ''' Same as 'get_plot_scalar' above, except that it returns HTML
+
         :param log_id: obtained through calling the getLogCollection service, with mosaicsvc URL parameter set to 'no' and up to 6 logid parameters are allowed
         :param options: optional parameters:
                 startdepth: the start depth of a borehole collar, default value=0
@@ -132,14 +153,31 @@ class ServiceInterface:
 
 
     def download_tsg(self, email, dataset_id, **options):
-        ''' When triggered, the TSG download Service will prepares TSG files from NVCL database datasets and makes them available for download.
+        ''' When triggered, the TSG download Service will prepare TSG files
+            from NVCL database datasets and make them available for download.
+
         :param email: user's email address to identify the user
         :param dataset_id: GUID dataset identifier of the dataset to be prepared (list of datasetid can be obtained through calling the NVCL Data Services getDatasetCollection service)
+        :param options: optional parameters:
+            linescan: Prepare linescan imagery with this dataset. Setting this 
+              to 'no' will reduce the size of the download significantly but
+              users will not be able to see the highest resolution images.
+              Default value=yes
+            forcerecreate: Force the service to delete the cached version of
+              this dataset and recreate it. Use this if there is a problem with
+              the dataset or cached version is stale. Default value=no
         '''
+        url = self.NVCL_URL + '/downloadtsg.html'
+        params = {'email' : email, 'datasetid': dataset_id}
+        params.update(options)
+        return self._get_response_str(url, params)
 
 
     def get_download_tsg_status(self, email):
-        ''' This service displays the status of past TSG file download requests for users. This service takes a single parameter which is the email address of the user.
+        ''' This service displays the status of past TSG file download requests
+            for users. This service takes a single parameter which is the email
+            address of the user.
+
         :param email: user's email address to identify the user
         '''
         url = self.NVCL_URL + '/checktsgstatus.html'
@@ -148,12 +186,17 @@ class ServiceInterface:
 
 
     def download_wfs(self, email, borehole_id, options):
-        ''' The WFS Download Service will prepare xml datasets from NVCL GeoServer instances and make them avaialble for download.
+        ''' The WFS Download Service will prepare xml datasets from NVCL
+            GeoServer instances and make them available for download.
+
         :param email: user's email address to identify the user
         :param borehole_id: gml feature identifier of the dataset to be prepared
         :param options: dictionary of optional parameters:
-            typename: the type name of the gml feature to prepare; default value=sa:SamplingFeatureCollection
-            forcerecreate: Force the Service to delete the cached version of this dataset and recreate it. Use this if there is a problem with the dataset or cached version is stale; default value=no
+            typename: the type name of the gml feature to prepare; default value
+              is 'sa:SamplingFeatureCollection'.
+            forcerecreate: Force the Service to delete the cached version of
+              this dataset and recreate it. Use this if there is a problem with
+              the dataset or cached version is stale; default value=no
         '''
         url = self.NVCL_URL + '/downloadwfs.html'
         params = {'email' : email, 'boreholeid': borehole_id}
@@ -163,6 +206,7 @@ class ServiceInterface:
 
     def download_wfs_status(self, email):
         ''' This service displays the status of past WFS file download requests.
+
         :param email: user's email address to identify the user
         '''
         url = self.NVCL_URL + '/checkwfsstatus.html'
@@ -188,6 +232,11 @@ class ServiceInterface:
 
 
     def get_downsampled_data(self, log_id, height_resol):
+        ''' Returns data in downsampled format, to a certain height resolution
+
+        :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
+        :param height_resol: desired height resolution for output
+        '''
         url = self.NVCL_URL + '/getDownsampledData.html'
         params = {'logid' : log_id, 'outputformat': 'json', 'startdepth': 0.0,
                   'enddepth': 10000.0, 'interval': height_resol}
@@ -195,8 +244,9 @@ class ServiceInterface:
 
 
     def _get_response_str(self, url, params):
-        ''' Performs a GET request with url and parameters and returns the
+        ''' Performs a GET request with URL and parameters and returns the
             response as a string
+
         :param url: URL of request, string
         :param params: parameters, in dictionary form
         :return: response, string; returns an empty string upon error
