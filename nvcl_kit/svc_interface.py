@@ -123,10 +123,12 @@ class ServiceInterface:
         return self._get_response_str(url, params)
 
 
-    def get_plot_multi_scalar(self, log_id, **options):
+    def get_plot_multi_scalar(self, log_id_list, **options):
         ''' Same as 'get_plot_scalar' above, except that it returns HTML
 
-        :param log_id: obtained through calling the getLogCollection service, with mosaicsvc URL parameter set to 'no' and up to 6 logid parameters are allowed
+        :param log_id_list: obtained through calling the getLogCollection
+             service, with mosaicsvc URL parameter set to 'no' and up to 6
+             logid parameters are allowed
         :param options: optional parameters:
                 startdepth: the start depth of a borehole collar, default value=0
                 enddepth: the end depth of a borehole collar, default value=99999
@@ -137,19 +139,22 @@ class ServiceInterface:
                 legend: value=yes or no, if yes - indicate to show the legend, default to yes
         '''
         url = self.NVCL_URL + '/plotmultiscalar.html'
-        params = {'logid' : log_id}
+        if not log_id_list:
+            return ""
+        params = self._make_multi_logids(log_id_list)
         params.update(options)
         return self._get_response_str(url, params)
 
 
-    def download_scalar(self, log_id):
+    def download_scalar(self, log_id_list):
         ''' This service enables download of the raw scalar values in csv format
 
         :param log_id: obtained through calling the getLogCollection service, with mosaicsvc URL parameter set to 'no' and multiple logid parameters are allowed
         :return: scalars in CSV format
         '''
         url = self.NVCL_URL + '/downloadscalars.html'
-        return self._get_response_str(url, {'logid' : log_id})
+        params = self._make_multi_logids(log_id_list)
+        return self._get_response_str(url, params)
 
 
     def download_tsg(self, email, dataset_id, **options):
@@ -184,7 +189,6 @@ class ServiceInterface:
         return self._get_response_str(url, {'email' : email})
 
 
-
     def download_wfs(self, email, borehole_id, options):
         ''' The WFS Download Service will prepare xml datasets from NVCL
             GeoServer instances and make them available for download.
@@ -213,7 +217,6 @@ class ServiceInterface:
         return self._get_response_str(url, {'email' : email})
 
 
-
     def get_log_collection(self, dataset_id, use_mosaic=False):
         ''' Retrieves log details for a particular borehole's dataset
 
@@ -231,15 +234,19 @@ class ServiceInterface:
         return self._get_response_str(url, params)
 
 
-    def get_downsampled_data(self, log_id, height_resol):
+    def get_downsampled_data(self, log_id, **options):
         ''' Returns data in downsampled format, to a certain height resolution
 
         :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
-        :param height_resol: desired height resolution for output
+        :param options: dictionary of optional parameters
+            outputformat: string 'csv' or 'json'
+            startdepth: start of depth range, in metres from borehole collar
+            enddepth: end of depth range, in metres from borehole collar
+            interval: size of interval to bin or average over
         '''
         url = self.NVCL_URL + '/getDownsampledData.html'
-        params = {'logid' : log_id, 'outputformat': 'json', 'startdepth': 0.0,
-                  'enddepth': 10000.0, 'interval': height_resol}
+        params = {'logid' : log_id}
+        params.update(options)
         return self._get_response_str(url, params)
 
 
@@ -265,3 +272,18 @@ class ServiceInterface:
             return ""
         return response_str
 
+
+    def _make_multi_logids(log_id_list):
+        ''' Converts a list of log ids to a logids for a HTTP GET request
+            e.g. ['XX','YY','ZZ'] converts to 'logid=XX&logid=YY&logid=ZZ'
+
+        :param log_id_list: log id list to be converted
+        :returns: logid GET request string
+        '''
+        if not log_id_list:
+            return {}
+        if len(log_id_list) == 1:
+            params = {'logid': log_id_list[0]}
+        else:
+            params = {'logid' : log_id_list[0] + '&' + '&'.join([ 'logid={}'.format(log_id) for log_id in log_id_list[1:]])}
+        return params

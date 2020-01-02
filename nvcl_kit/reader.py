@@ -240,7 +240,9 @@ class NVCLReader:
         '''
         LOGGER.debug(" get_borehole_data(%s, %d, %s)", log_id, height_resol, class_name)
         # Send HTTP request, get response
-        json_data = self.svc.get_downsampled_data(log_id, height_resol)
+        json_data = self.svc.get_downsampled_data(log_id,
+            interval=height_resol, outputformat='json',
+            startdepth=0.0, enddepth=10000.0)
         if not json_data:
             LOGGER.debug("get_borehole_data() json_data= %s", repr(json_data))
             return OrderedDict()
@@ -337,7 +339,8 @@ class NVCLReader:
     def get_datasetid_list(self, nvcl_id):
         ''' Retrieves a list of dataset ids
         :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+            the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
+            or 'get_nvcl_id_list()'
         :returns list of dataset ids
         '''
         response_str = self.svc.get_dataset_collection(nvcl_id)
@@ -355,8 +358,10 @@ class NVCLReader:
     def get_dataset_list(self, nvcl_id):
         ''' Retrieves a list of dataset objects
         :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
-       :returns list of SimpleNamespace objects, attributes are: dataset_id, dataset_name, borehole_uri, tray_id, section_id, domain_id
+            the 'nvcl_id' from each dict item retrieved from
+            'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :returns list of SimpleNamespace objects, attributes are: dataset_id,
+            dataset_name, borehole_uri, tray_id, section_id, domain_id
         '''
         response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
@@ -383,14 +388,204 @@ class NVCLReader:
         return dataset_list
 
 
-    def get_mosaic_image(self, log_id, width, sampleno_start, sampleno_end):
-        pass
+    def get_mosaic_logs(self, dataset_id):
+        return self._filter_mosaic_logs(dataset_id, 'Mosaic')
 
-    def get_tray_thumb(self, log_id, sample_no):
-        pass
+
+    def get_thumbnail_logs(self, dataset_id):
+        return self._filter_mosaic_logs(dataset_id, 'Tray Thumbnail Images')
+
+
+    def get_image_logs(self, dataset_id):
+        return self._filter_mosaic_logs(dataset_id, 'Tray Images')
+
+
+    def get_imagery_logs(self, dataset_id):
+        return self._filter_mosaic_logs(dataset_id, 'Imagery')
+
+
+    def _filter_mosaic_logs(self, dataset_id, target_log_name):
+        response_str = self.svc.get_log_collection(dataset_id, True)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        dataset_list = []
+        for child in root.findall('./Log'):
+            log_id = child.findtext('./LogID', default=None)
+            log_name = child.findtext('./LogName', default=None)
+            try:
+                sample_count = int(child.findtext('./SampleCount', default=0))
+            except ValueError:
+                sample_count = 0.0
+            if not log_id or not log_name:
+                continue
+            if target_log_name.lower() == log_name.lower():
+                dataset_obj = SimpleNamespace(log_id=log_id,
+                                          log_name=log_name,
+                                          sample_count=sample_count)
+                dataset_list.append(dataset_obj)
+        return dataset_list
+
+
+    def get_plot_logs(self, dataset_id):
+        ''' Used for getting log ids for making data plots
+
+        :param dataset_id: a dataset id, taken from 'get_dataset_id_list()'
+        :return: a list of SimpleNamespace objects, with attributes:
+             'log_id' and 'log_name'
+        '''
+        response_str = self.svc.get_log_collection(dataset_id)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        dataset_list = []
+        for child in root.findall('./Log'):
+            log_id = child.findtext('./LogID', default=None)
+            log_name = child.findtext('./LogName', default=None)
+            if not log_id or not log_name:
+                continue
+            dataset_obj = SimpleNamespace(log_id=log_id,
+                                          log_name=log_name)
+            dataset_list.append(dataset_obj)
+        return dataset_list
+
+
+    def get_mosaic_image(self, log_id, **options):
+        ''' Retrieves images of NVCL core trays
+
+        :param log_id: obtained through calling 'get_mosaic_logs()' or
+            'get_thumbnail_logs()' or 'get_image_logs()' or 'get_imagery_logs()'
+        :param options: optional parameters:
+                 width: number of column the images are to be displayed, default value=3
+                 startsampleno: the first sample image to be displayed, default value=0
+                 endsampleno: the last sample image to be displayed, default value=99999
+        '''
+        return self.svc.get_mosaic(log_id, **options)
+
+
+    def get_tray_thumb_html(self, dataset_id, log_id, **options):
+        ''' Gets core tray thumbnail images as HTML
+
+        :param dataset_id: obtained through calling 'get_dataset_id_list()'
+        :param log_id: obtained through calling 'get_thumbnail_logs()'
+        :param width: specify the number of column the images are to be displayed,
+            default value=3
+        :param startsampleno: the first sample image to be displayed,
+            default value=0
+        :param endsampleno: the last sample image to be displayed,
+            default value=99999
+        :return: thumbnail image in HTML format
+        '''
+        return self.svc.get_mosaic_tray_thumbnail(dataset_id, log_id, **options)
+
+
+    def get_tray_thumb_png(self, log_id, sample_no='0'):
+        ''' Gets core tray thumbnail images as PNG
+
+        :param log_id: obtained through calling 'get_thumbnail_logs()'
+        :param sample_no: sample number, string e.g. '0','1','2'...
+                          optional, default is '0'
+        :return: thumbnail image in PNG format
+        '''
+        return self.svc.get_display_tray_thumb(log_id, sample_no)
+
 
     def get_tray_depths(self, log_id):
-        pass
+        ''' Gets tray depths
+        :param log_id: obtained through calling 'get_mosaic_logs()' or
+            'get_thumbnail_logs()' or 'get_image_logs()' or 'get_imagery_logs()'
+        :return: a list of SimpleNamespace objects, with attributes:
+            'sample_no', 'start_value' and 'end_value'
+        '''
+        response_str = self.svc.get_image_tray_depth(log_id)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        dataset_list = []
+        for child in root.findall('./ImageTray'):
+            sample_no = child.findtext('./SampleNo', default=None)
+            start_value = child.findtext('./StartValue', default=None)
+            end_value = child.findtext('./EndValue', default=None)
+            if not sample_no or not start_value or not end_value:
+                continue
+            image_tray_obj = SimpleNamespace(sample_no=sample_no,
+                                          start_value=start_value,
+                                          end_value=end_value)
+            image_tray_list.append(dataset_obj)
+        return image_tray_list
+
+
+    def get_scalar_data(self, log_id_list):
+        ''' Downloads scalar data in CSV format
+
+        :param log_id_list: list of log ids obtained through calling
+            'get_mosaic_logs()' or 'get_thumbnail_logs()' or
+            'get_image_logs()' or 'get_imagery_logs()'
+        :return scalar data in CSV format
+        '''
+        return self.svc.download_scalar(log_id_list)
+
+
+    def get_sampled_scalar_data(log_id, **options):
+        ''' Returns data in downsampled format, to a certain height resolution
+
+        :param log_id: obtained through calling 'get_mosaic_logs()' or
+            'get_thumbnail_logs()' or 'get_image_logs()' or 'get_imagery_logs()'
+        :param outputformat: (optional) string 'csv' or 'json'
+        :param startdepth: (optional) start of depth range, in metres from borehole
+            collar
+        :param enddepth: (optional) end of depth range, in metres from borehole
+            collar
+        :param interval: (optional) resolution to bin or average over
+        '''
+        return self.svc.get_downsampled_data(log_id, **options)
+
+
+    def plot_scalar_png(self, log_id, **options):
+        ''' Draws a plot as an image in PNG format.
+
+        :param log_id: obtained through calling 'get_plot_logs()'
+        :param startdepth: (optional) the start depth of a borehole collar,
+             default value=0
+        :param enddepth: (optional) the end depth of a borehole collar,
+             default value=99999
+        :param samplinginterval: (optional) the interval of the sampling,
+             default value=1
+        :param width: (optional) the width of the image in pixel, default value=300
+        :param height: (optional) the height of the image in pixel,
+             default value=600
+        :param graphtype: (optional) an integer range from 1 to 3,
+             1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+        :param legend: (optional) value=1 or 0, 1 - indicates to show the legend,
+             0 to hide it, optional, default to 1
+        :return: a 2d plot as a PNG image
+        '''
+        return self.svc.get_plot_scalar(log_id, **options)
+
+
+    def plot_scalars_html(self, log_id_list, **options):
+        ''' Draws multiple plots, returned in HTML format
+
+        :param log_id_list: a list of up to 6 log ids, obtained through calling
+               'get_plot_logs()'
+        :param startdepth: (optional) the start depth of a borehole collar,
+             default value=0
+        :param enddepth: (optional) the end depth of a borehole collar,
+             default value=99999
+        :param samplinginterval: (optional) the interval of the sampling,
+             default value=1
+        :param width: (optional) the width of the image in pixel,
+             default value=300
+        :param height: (optional) the height of the image in pixel,
+             default value=600
+        :param graphtype: (optional) an integer range from 1 to 3,
+             1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+        :param legend: (optional) value=yes or no, if yes - indicate to show the
+             legend, default to yes
+        :return: one or more 2d plots as HTML
+        '''
+        return self.svc.get_plot_multi_scalar(log_id_list, **options)
+
 
     def get_imagelog_data(self, nvcl_id):
         ''' Retrieves a set of image log data for a particular borehole
