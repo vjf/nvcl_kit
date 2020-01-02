@@ -11,9 +11,6 @@ import itertools
 import logging
 from types import SimpleNamespace
 
-import urllib
-import urllib.parse
-import urllib.request
 from requests.exceptions import RequestException
 
 from owslib.wfs import WebFeatureService
@@ -22,6 +19,7 @@ from owslib.util import ServiceException
 
 from http.client import HTTPException
 
+from nvcl_kit.svc_interface import ServiceInterface
 
 ENFORCE_IS_PUBLIC = True
 ''' Enforce the 'is_public' flag , i.e. any data with 'is_public' set to 'false'
@@ -224,6 +222,8 @@ class NVCLReader:
         if self.wfs and not self._fetch_borehole_list(param_obj.MAX_BOREHOLES):
             self.wfs = None
 
+        self.svc = ServiceInterface(self.param_obj.NVCL_URL, TIMEOUT)
+
 
     def get_borehole_data(self, log_id, height_resol, class_name):
         ''' Retrieves borehole mineral data for a borehole
@@ -240,13 +240,11 @@ class NVCLReader:
         '''
         LOGGER.debug(" get_borehole_data(%s, %d, %s)", log_id, height_resol, class_name)
         # Send HTTP request, get response
-        url = self.param_obj.NVCL_URL + '/getDownsampledData.html'
-        params = {'logid' : log_id, 'outputformat': 'json', 'startdepth': 0.0,
-                  'enddepth': 10000.0, 'interval': height_resol}
-        json_data = self._get_response_str(url, params)
+        json_data = self.svc.get_downsampled_data(log_id, height_resol)
         if not json_data:
+            LOGGER.debug("get_borehole_data() json_data= %s", repr(json_data))
             return OrderedDict()
-        LOGGER.debug('json_data = %s', json_data)
+        LOGGER.debug('json_data = %s', json_data[:100])
         meas_list = []
         depth_dict = OrderedDict()
         try:
@@ -275,24 +273,8 @@ class NVCLReader:
                 for key, val in kv_dict.items():
                     setattr(depth_dict[depth], key, val)
 
+        LOGGER.debug("get_borehole_data() Returning %s", repr(depth_dict))
         return depth_dict
-
-
-    def _get_log_collection(self, dataset_id, use_mosaic=False):
-        ''' Retrieves log details for a particular borehole's dataset
-
-        :param dataset_id: dataset id parameter,
-                        the 'dataset_id' from each dict item retrieved from 'get_datasetid_list()' or 'get_dataset_data()'
-        :param mosaic_svc: NVCL 'mosaic_svc' parameter, if true retrieves mosaic
-                           data, else scalar; boolean
-        :returns: the response as a byte string or an empty string upon error
-        '''
-        url = self.param_obj.NVCL_URL + '/getLogCollection.html'
-        mosaic_svc = 'no'
-        if use_mosaic:
-            mosaic_svc = 'yes'
-        params = {'datasetid' : dataset_id, 'mosaic_svc': mosaic_svc}
-        return self._get_response_str(url, params)
 
 
     def get_logs_scalar(self, dataset_id):
@@ -302,7 +284,7 @@ class NVCLReader:
         :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, is_public, log_type, algorithm_id
         On error returns empty list
         '''
-        response_str = self._get_log_collection(dataset_id)
+        response_str = self.svc.get_log_collection(dataset_id)
         if not response_str:
             return []
         root = ET.fromstring(response_str)
@@ -332,7 +314,7 @@ class NVCLReader:
         :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, sample_count
         On error returns empty list
         '''
-        response_str = self._get_log_collection(dataset_id, True)
+        response_str = self.svc.get_log_collection(dataset_id, True)
         if not response_str:
             return []
         root = ET.fromstring(response_str)
@@ -352,123 +334,13 @@ class NVCLReader:
         return log_list
 
 
-    def _get_dataset_collection(self, nvcl_id):
-        ''' Retrieves a dataset for a particular borehole
-
-        :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
-        :returns: the response as a byte string or an empty string upon error
-        '''
-        url = self.param_obj.NVCL_URL + '/getDatasetCollection.html'
-        params = {'holeidentifier' : nvcl_id}
-        return self._get_response_str(url, params)
-
-
-    def _get_mosaic(self, log_id, **options):
-        '''
-        :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
-        :param options: dict of optional parameters:
-                 width: number of column the images are to be displayed, default value=3
-                 startsampleno: the first sample image to be displayed, default value=0
-                 endsampleno: the last sample image to be displayed, default value=99999
-        '''
-        url = self.param_obj.NVCL_URL + '/mosaic.html'
-        params = {'logid' : log_id}
-        params.update(options)
-        return self._get_response_str(url, params)
-
-
-    def _get_mosaic_tray_thumbnail(self, dataset_id, log_id, **options):
-        '''
-        :param dataset_id: obtained through calling the getDatasetCollection service
-        :param logid: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes, with LogName equal Tray Thumbnail Images
-        :param options: dictonary of optional parameters:
-                  width: specify the number of column the images are to be displayed, default value=3
-                  startsampleno: the first sample image to be displayed, default value=0
-                  endsampleno: the last sample image to be displayed, default value=99999
-        '''
-        url = self.param_obj.NVCL_URL + '/mosaictraythumbnail.html'
-        params = {'datasetid': dataset_id, 'logid' : log_id, 'width': width, 'startsampleno': start_sampleno, 'endsampleno': end_sampleno}
-        return self._get_response_str(url, params)
-
-
-    def _get_display_tray_thumb(self, log_id, sample_no):
-        url = self.param_obj.NVCL_URL + '/Display_Tray_Thumb.html'
-        params = {'logid' : log_id, 'sampleno': sample_no}
-        return self._get_response_str(url, params)
-
-
-    def _get_image_tray_depth(self, log_id):
-        url = self.param_obj.NVCL_URL + '/getImageTrayDepth.html'
-        params = {'logid' : log_id}
-        return self._get_response_str(url, params)
-
-
-    def _get_plot_scalar(self, log_id, **options):
-        '''
-        :param log_id: obtained through calling the getLogCollection service with mosaicsvc URL parameter set to 'no'
-        :param options: a dict of options:
-               startdepth: the start depth of a borehole collar, defaultvalue = 0
-               enddepth: the end depth of a borehole collar, default value=99999
-               samplinginterval: the interval of the sampling, default value=1
-               width: the width of the image in pixel, default value=300
-               height: the height of the image in pixel, default value=600
-               graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
-               legend: value= 1 or 0, 1 - indicates to show the legend, 0 to hide it, optional, default to 1
-        '''
-        url = self.param_obj.NVCL_URL + '/plotscalar.html'
-        params = {'logid' : log_id}
-        params.update(options)
-        return self._get_response_str(url, params)
-
-
-    def _get_plot_multi_scalar(self, log_id, **options):
-        '''
-        :param log_id: obtained through calling the getLogCollection service, with mosaicsvc URL parameter set to 'no' and up to 6 logid parameters are allowed
-        :param options: dictionary of optional parameters:
-                startdepth: the start depth of a borehole collar, default value=0
-                enddepth: the end depth of a borehole collar, default value=99999
-                samplinginterval: the interval of the sampling, default value=1
-                width: the width of the image in pixel, default value=300
-                height: the height of the image in pixel, default value=600
-                graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
-                legend: value=yes or no, if yes - indicate to show the legend, default to yes
-        '''
-        url = self.param_obj.NVCL_URL + '/plotmultiscalar.html'
-        params = {'logid' : log_id}
-        params.update(options)
-        return self._get_response_str(url, params)
-
-
-    def _get_response_str(self, url, params):
-        ''' Performs a GET request with url and parameters and returns the
-            response as a string
-        :param url: URL of request, string
-        :param params: parameters, in dictionary form
-        :return: response, string; returns an empty string upon error
-        '''
-        enc_params = urllib.parse.urlencode(params).encode('ascii')
-        req = urllib.request.Request(url, enc_params)
-        response_str = b''
-        try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
-                response_str = response.read()
-        except HTTPException as he_exc:
-            LOGGER.warning('HTTP Error: %s', str(he_exc))
-            return ""
-        except OSError as os_exc:
-            LOGGER.warning('OS Error: %s', str(os_exc))
-            return ""
-        return response_str
-
-
     def get_datasetid_list(self, nvcl_id):
         ''' Retrieves a list of dataset ids
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
         :returns list of dataset ids
         '''
-        response_str = self._get_dataset_collection(nvcl_id)
+        response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
         root = ET.fromstring(response_str)
@@ -486,7 +358,7 @@ class NVCLReader:
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
        :returns list of SimpleNamespace objects, attributes are: dataset_id, dataset_name, borehole_uri, tray_id, section_id, domain_id
         '''
-        response_str = self._get_dataset_collection(nvcl_id)
+        response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
         root = ET.fromstring(response_str)
@@ -528,7 +400,7 @@ class NVCLReader:
         :returns: a list of SimpleNamespace() objects with attributes:
                   log_id, log_type, log_name
         '''
-        response_str = self._get_dataset_collection(nvcl_id)
+        response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
         root = ET.fromstring(response_str)
@@ -554,7 +426,7 @@ class NVCLReader:
                   log_id, log_name, wavelength_units, sample_count, script,
                   wavelengths
         '''
-        response_str = self._get_dataset_collection(nvcl_id)
+        response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
         root = ET.fromstring(response_str)
@@ -593,7 +465,7 @@ class NVCLReader:
                   log_id, log_name, sample_count, floats_per_sample, 
                   min_val, max_val
         '''
-        response_str = self._get_dataset_collection(nvcl_id)
+        response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
         root = ET.fromstring(response_str)
@@ -678,7 +550,7 @@ class NVCLReader:
             LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
             return False
         borehole_list = []
-        LOGGER.debug('_fetch_boreholes_list() resp= %s', response_str)
+        LOGGER.debug('_fetch_boreholes_list() resp= %s', response_str[:100])
         borehole_cnt = 0
         root = ET.fromstring(response_str)
 

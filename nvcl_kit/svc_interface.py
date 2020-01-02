@@ -1,0 +1,217 @@
+import urllib
+import urllib.parse
+import urllib.request
+from http.client import HTTPException
+import sys, logging
+
+LOG_LVL = logging.INFO
+''' Initialise debug level
+'''
+
+# Set up debugging
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LOG_LVL)
+
+if not LOGGER.hasHandlers():
+
+    # Create logging console handler
+    HANDLER = logging.StreamHandler(sys.stdout)
+
+    # Create logging formatter
+    FORMATTER = logging.Formatter('%(name)s -- %(levelname)s - %(message)s')
+
+    # Add formatter to ch
+    HANDLER.setFormatter(FORMATTER)
+
+    # Add handler to LOGGER and set level
+    LOGGER.addHandler(HANDLER)
+
+
+class ServiceInterface:
+
+    def __init__(self, nvcl_url, timeout):
+        self.NVCL_URL = nvcl_url
+        self.TIMEOUT = timeout
+
+    def get_dataset_collection(self, nvcl_id):
+        ''' Retrieves a dataset for a particular borehole
+
+        :param nvcl_id: NVCL 'holeidentifier' parameter,
+                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :returns: the response as a byte string or an empty string upon error
+        '''
+        url = self.NVCL_URL + '/getDatasetCollection.html'
+        params = {'holeidentifier' : nvcl_id}
+        return self._get_response_str(url, params)
+
+
+    def get_mosaic(self, log_id, **options):
+        '''
+        :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
+        :param options: optional parameters:
+                 width: number of column the images are to be displayed, default value=3
+                 startsampleno: the first sample image to be displayed, default value=0
+                 endsampleno: the last sample image to be displayed, default value=99999
+        '''
+        url = self.NVCL_URL + '/mosaic.html'
+        params = {'logid' : log_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
+
+    def get_mosaic_tray_thumbnail(self, dataset_id, log_id, **options):
+        '''
+        :param dataset_id: obtained through calling the getDatasetCollection service
+        :param logid: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes, with LogName equal Tray Thumbnail Images
+        :param options: optional parameters:
+                  width: specify the number of column the images are to be displayed, default value=3
+                  startsampleno: the first sample image to be displayed, default value=0
+                  endsampleno: the last sample image to be displayed, default value=99999
+        '''
+        url = self.NVCL_URL + '/mosaictraythumbnail.html'
+        params = {'datasetid': dataset_id, 'logid' : log_id, 'width': width, 'startsampleno': start_sampleno, 'endsampleno': end_sampleno}
+        return self._get_response_str(url, params)
+
+
+    def get_display_tray_thumb(self, log_id, sample_no):
+        url = self.NVCL_URL + '/Display_Tray_Thumb.html'
+        params = {'logid' : log_id, 'sampleno': sample_no}
+        return self._get_response_str(url, params)
+
+
+    def get_image_tray_depth(self, log_id):
+        url = self.NVCL_URL + '/getImageTrayDepth.html'
+        params = {'logid' : log_id}
+        return self._get_response_str(url, params)
+
+
+    def get_plot_scalar(self, log_id, **options):
+        '''
+        :param log_id: obtained through calling the getLogCollection service with mosaicsvc URL parameter set to 'no'
+        :param options: a dict of options:
+               startdepth: the start depth of a borehole collar, defaultvalue = 0
+               enddepth: the end depth of a borehole collar, default value=99999
+               samplinginterval: the interval of the sampling, default value=1
+               width: the width of the image in pixel, default value=300
+               height: the height of the image in pixel, default value=600
+               graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+               legend: value= 1 or 0, 1 - indicates to show the legend, 0 to hide it, optional, default to 1
+        '''
+        url = self.NVCL_URL + '/plotscalar.html'
+        params = {'logid' : log_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
+
+    def get_plot_multi_scalar(self, log_id, **options):
+        '''
+        :param log_id: obtained through calling the getLogCollection service, with mosaicsvc URL parameter set to 'no' and up to 6 logid parameters are allowed
+        :param options: optional parameters:
+                startdepth: the start depth of a borehole collar, default value=0
+                enddepth: the end depth of a borehole collar, default value=99999
+                samplinginterval: the interval of the sampling, default value=1
+                width: the width of the image in pixel, default value=300
+                height: the height of the image in pixel, default value=600
+                graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+                legend: value=yes or no, if yes - indicate to show the legend, default to yes
+        '''
+        url = self.NVCL_URL + '/plotmultiscalar.html'
+        params = {'logid' : log_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
+
+    def download_scalar(self, log_id):
+        ''' This service enables download of the raw scalar values in csv format
+
+        :param log_id: obtained through calling the getLogCollection service, with mosaicsvc URL parameter set to 'no' and multiple logid parameters are allowed
+        :return: scalars in CSV format
+        '''
+        url = self.NVCL_URL + '/downloadscalars.html'
+        return self._get_response_str(url, {'logid' : log_id})
+
+
+    def download_tsg(self, email, dataset_id, **options):
+        ''' When triggered, the TSG download Service will prepares TSG files from NVCL database datasets and makes them available for download.
+        :param email: user's email address to identify the user
+        :param dataset_id: GUID dataset identifier of the dataset to be prepared (list of datasetid can be obtained through calling the NVCL Data Services getDatasetCollection service)
+        '''
+
+
+    def get_download_tsg_status(self, email):
+        ''' This service displays the status of past TSG file download requests for users. This service takes a single parameter which is the email address of the user.
+        :param email: user's email address to identify the user
+        '''
+        url = self.NVCL_URL + '/checktsgstatus.html'
+        return self._get_response_str(url, {'email' : email})
+
+
+
+    def download_wfs(self, email, borehole_id, options):
+        ''' The WFS Download Service will prepare xml datasets from NVCL GeoServer instances and make them avaialble for download.
+        :param email: user's email address to identify the user
+        :param borehole_id: gml feature identifier of the dataset to be prepared
+        :param options: dictionary of optional parameters:
+            typename: the type name of the gml feature to prepare; default value=sa:SamplingFeatureCollection
+            forcerecreate: Force the Service to delete the cached version of this dataset and recreate it. Use this if there is a problem with the dataset or cached version is stale; default value=no
+        '''
+        url = self.NVCL_URL + '/downloadwfs.html'
+        params = {'email' : email, 'boreholeid': borehole_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
+
+    def download_wfs_status(self, email):
+        ''' This service displays the status of past WFS file download requests.
+        :param email: user's email address to identify the user
+        '''
+        url = self.NVCL_URL + '/checkwfsstatus.html'
+        return self._get_response_str(url, {'email' : email})
+
+
+
+    def get_log_collection(self, dataset_id, use_mosaic=False):
+        ''' Retrieves log details for a particular borehole's dataset
+
+        :param dataset_id: dataset id parameter,
+                        the 'dataset_id' from each dict item retrieved from 'get_datasetid_list()' or 'get_dataset_data()'
+        :param mosaic_svc: NVCL 'mosaic_svc' parameter, if true retrieves mosaic
+                           data, else scalar; boolean
+        :returns: the response as a byte string or an empty string upon error
+        '''
+        url = self.NVCL_URL + '/getLogCollection.html'
+        mosaic_svc = 'no'
+        if use_mosaic:
+            mosaic_svc = 'yes'
+        params = {'datasetid' : dataset_id, 'mosaic_svc': mosaic_svc}
+        return self._get_response_str(url, params)
+
+
+    def get_downsampled_data(self, log_id, height_resol):
+        url = self.NVCL_URL + '/getDownsampledData.html'
+        params = {'logid' : log_id, 'outputformat': 'json', 'startdepth': 0.0,
+                  'enddepth': 10000.0, 'interval': height_resol}
+        return self._get_response_str(url, params)
+
+
+    def _get_response_str(self, url, params):
+        ''' Performs a GET request with url and parameters and returns the
+            response as a string
+        :param url: URL of request, string
+        :param params: parameters, in dictionary form
+        :return: response, string; returns an empty string upon error
+        '''
+        enc_params = urllib.parse.urlencode(params).encode('ascii')
+        req = urllib.request.Request(url, enc_params)
+        response_str = b''
+        try:
+            with urllib.request.urlopen(req, timeout=self.TIMEOUT) as response:
+                response_str = response.read()
+        except HTTPException as he_exc:
+            LOGGER.warning('HTTP Error: %s', str(he_exc))
+            return ""
+        except OSError as os_exc:
+            LOGGER.warning('OS Error: %s', str(os_exc))
+            return ""
+        return response_str
+
