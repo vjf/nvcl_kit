@@ -657,6 +657,48 @@ class TestNVCLReader(unittest.TestCase):
                 self.assertEqual(depth_list[3].start_value, '14.903137')
                 self.assertEqual(depth_list[3].end_value, '18.103138')
 
+    def setup_urlopen(self, fn, src_file):
+        rdr = self.setup_reader()
+        ret_list = []
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
+            open_obj = mock_request.return_value
+            with open(src_file) as fp:
+                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
+                ret_list = getattr(rdr, fn)("dummy-id")
+        return ret_list
+
+
+    def test_get_mosaic_logs(self):
+        log_list = self.setup_urlopen('get_mosaic_logs', 'logcoll_mosaic.txt')
+        self.assertEqual(len(log_list), 1)
+        self.assertEqual(log_list[0].log_id, '5f14ca9c-6d2d-4f86-9759-742dc738736')
+        self.assertEqual(log_list[0].log_name, 'Mosaic')
+        self.assertEqual(log_list[0].sample_count, 1)
+
+
+    def test_get_tray_thumbnail_logs(self):
+        log_list = self.setup_urlopen('get_tray_thumbnail_logs', 'logcoll_mosaic.txt')
+        self.assertEqual(len(log_list), 1)
+        self.assertEqual(log_list[0].log_id, '5e6fb391-5fef-4bb0-ae8e-dea25e7958d')
+        self.assertEqual(log_list[0].log_name, 'Tray Thumbnail Images')
+        self.assertEqual(log_list[0].sample_count, 50)
+
+
+    def test_get_tray_image_logs(self):
+        log_list = self.setup_urlopen('get_tray_image_logs', 'logcoll_mosaic.txt')
+        self.assertEqual(len(log_list), 1)
+        self.assertEqual(log_list[0].log_id, 'bc79d76a-02ef-44e2-96f2-008a4145cf3')
+        self.assertEqual(log_list[0].log_name, 'Tray Images')
+        self.assertEqual(log_list[0].sample_count, 50)
+
+
+    def test_imagery_logs(self):
+        log_list = self.setup_urlopen('get_imagery_logs', 'logcoll_mosaic.txt')
+        self.assertEqual(len(log_list), 1)
+        self.assertEqual(log_list[0].log_id, 'b80a98e4-6d9b-4a58-ab04-d105c172e67')
+        self.assertEqual(log_list[0].log_name, 'Imagery')
+        self.assertEqual(log_list[0].sample_count, 30954)
+
 
 if __name__ == '__main__':
     unittest.main()
