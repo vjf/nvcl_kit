@@ -143,7 +143,7 @@ for log in log_list:
           log.log_name,
           log.is_public,
           log.log_type,
-          log..algrithm_id)
+          log.algorithm_id)
 ```
 
 
