@@ -640,5 +640,23 @@ class TestNVCLReader(unittest.TestCase):
         self.urllib_exception_tester(OSError, rdr.get_borehole_data, 'OS Error:',  {'log_id': 'dummy-logid', 'height_resol': 20, 'class_name': 'dummy-class'})
 
 
+    def test_image_tray_depth(self):
+        ''' Tests that can parse image tray depth data
+        '''
+        rdr = self.setup_reader()
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
+            open_obj = mock_request.return_value
+            with open('img_tray_depth.txt') as fp:
+                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
+                depth_list = rdr.get_tray_depths("dummy-id")
+                self.assertEqual(len(depth_list), 50)
+                self.assertEqual(depth_list[0].sample_no, '0')
+                self.assertEqual(depth_list[0].start_value, '3.00451')
+                self.assertEqual(depth_list[0].end_value, '7.603529')
+                self.assertEqual(depth_list[3].sample_no, '3')
+                self.assertEqual(depth_list[3].start_value, '14.903137')
+                self.assertEqual(depth_list[3].end_value, '18.103138')
+
+
 if __name__ == '__main__':
     unittest.main()
