@@ -501,7 +501,7 @@ class NVCLReader:
         if not response_str:
             return []
         root = ET.fromstring(response_str)
-        dataset_list = []
+        image_tray_list = []
         for child in root.findall('./ImageTray'):
             sample_no = child.findtext('./SampleNo', default=None)
             start_value = child.findtext('./StartValue', default=None)
@@ -511,7 +511,7 @@ class NVCLReader:
             image_tray_obj = SimpleNamespace(sample_no=sample_no,
                                           start_value=start_value,
                                           end_value=end_value)
-            image_tray_list.append(dataset_obj)
+            image_tray_list.append(image_tray_obj)
         return image_tray_list
 
 
