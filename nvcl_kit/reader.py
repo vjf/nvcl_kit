@@ -392,11 +392,11 @@ class NVCLReader:
         return self._filter_mosaic_logs(dataset_id, 'Mosaic')
 
 
-    def get_thumbnail_logs(self, dataset_id):
+    def get_tray_thumbnail_logs(self, dataset_id):
         return self._filter_mosaic_logs(dataset_id, 'Tray Thumbnail Images')
 
 
-    def get_image_logs(self, dataset_id):
+    def get_tray_image_logs(self, dataset_id):
         return self._filter_mosaic_logs(dataset_id, 'Tray Images')
 
 
@@ -492,8 +492,8 @@ class NVCLReader:
 
     def get_tray_depths(self, log_id):
         ''' Gets tray depths
-        :param log_id: obtained through calling 'get_mosaic_logs()' or
-            'get_thumbnail_logs()' or 'get_image_logs()' or 'get_imagery_logs()'
+        :param log_id: obtained through calling 'get_tray_thumbnail_logs()' or
+                 'get_tray_image_logs()'
         :return: a list of SimpleNamespace objects, with attributes:
             'sample_no', 'start_value' and 'end_value'
         '''
