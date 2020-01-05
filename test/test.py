@@ -369,23 +369,29 @@ class TestNVCLReader(unittest.TestCase):
                 param_obj = self.setup_param_obj()
                 rdr = NVCLReader(param_obj)
         return rdr 
+
+
+    def setup_urlopen(self, fn, params, src_file):
+        rdr = self.setup_reader()
+        ret_list = []
+        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
+            open_obj = mock_request.return_value
+            with open(src_file) as fp:
+                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
+                ret_list = getattr(rdr, fn)(**params)
+        return ret_list
    
 
     def test_imagelog_data(self):
         ''' Test get_imagelog_data()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('dataset_coll.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = fp.read()
-                imagelog_data_list = rdr.get_imagelog_data("blah")
-                self.assertEqual(len(imagelog_data_list), 5)
+        imagelog_data_list = self.setup_urlopen('get_imagelog_data', {'nvcl_id':"blah"}, 'dataset_coll.txt')
+        self.assertEqual(len(imagelog_data_list), 5)
 
-                self.assertEqual(imagelog_data_list[0].log_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
-                self.assertEqual(imagelog_data_list[0].log_name, 'Tray')
-                self.assertEqual(imagelog_data_list[0].log_type, '1')
-                self.assertEqual(imagelog_data_list[0].algorithmout_id, '0')
+        self.assertEqual(imagelog_data_list[0].log_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
+        self.assertEqual(imagelog_data_list[0].log_name, 'Tray')
+        self.assertEqual(imagelog_data_list[0].log_type, '1')
+        self.assertEqual(imagelog_data_list[0].algorithmout_id, '0')
 
 
     def urllib_exception_tester(self, exc, fn, msg, params):
@@ -416,20 +422,15 @@ class TestNVCLReader(unittest.TestCase):
     def test_profilometer_data(self):
         ''' Test get_profilometer_data()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('dataset_coll.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = fp.read()
-                prof_data_list = rdr.get_profilometer_data("blah")
-                self.assertEqual(len(prof_data_list), 1)
+        prof_data_list = self.setup_urlopen('get_profilometer_data', {'nvcl_id':"blah"}, 'dataset_coll.txt')
+        self.assertEqual(len(prof_data_list), 1)
 
-                self.assertEqual(prof_data_list[0].log_id, 'a61b105c-31e8-4da7-b790-4f21c9341c5')
-                self.assertEqual(prof_data_list[0].log_name, 'Profile log')
-                self.assertEqual(prof_data_list[0].max_val, 78.40174)
-                self.assertEqual(prof_data_list[0].min_val, 0.001537323)
-                self.assertEqual(prof_data_list[0].floats_per_sample, 128)
-                self.assertEqual(prof_data_list[0].sample_count, 30954)
+        self.assertEqual(prof_data_list[0].log_id, 'a61b105c-31e8-4da7-b790-4f21c9341c5')
+        self.assertEqual(prof_data_list[0].log_name, 'Profile log')
+        self.assertEqual(prof_data_list[0].max_val, 78.40174)
+        self.assertEqual(prof_data_list[0].min_val, 0.001537323)
+        self.assertEqual(prof_data_list[0].floats_per_sample, 128)
+        self.assertEqual(prof_data_list[0].sample_count, 30954)
 
 
     def test_profilometer_exception(self):
@@ -443,18 +444,13 @@ class TestNVCLReader(unittest.TestCase):
     def test_logs_scalar(self):
         ''' Tests get_logs_scalar()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('logcoll_scalar.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = fp.read()
-                log_list = rdr.get_logs_scalar("blah")
-                self.assertEqual(len(log_list), 4)
-                self.assertEqual(log_list[0].log_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
-                self.assertEqual(log_list[0].log_name, 'Tray')
-                self.assertEqual(log_list[0].is_public, 'true')
-                self.assertEqual(log_list[0].log_type, '1')
-                self.assertEqual(log_list[0].algorithm_id, '0')
+        log_list = self.setup_urlopen('get_logs_scalar', {'dataset_id':"blah"}, 'logcoll_scalar.txt')
+        self.assertEqual(len(log_list), 4)
+        self.assertEqual(log_list[0].log_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
+        self.assertEqual(log_list[0].log_name, 'Tray')
+        self.assertEqual(log_list[0].is_public, 'true')
+        self.assertEqual(log_list[0].log_type, '1')
+        self.assertEqual(log_list[0].algorithm_id, '0')
 
 
     def test_logs_scalar_empty(self):
@@ -481,16 +477,11 @@ class TestNVCLReader(unittest.TestCase):
     def test_logs_mosaic(self):
         ''' Tests get_logs_mosaic()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('logcoll_mosaic.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = fp.read()
-                log_list = rdr.get_logs_mosaic("blah")
-                self.assertEqual(len(log_list), 4)
-                self.assertEqual(log_list[0].log_id, '5f14ca9c-6d2d-4f86-9759-742dc738736')
-                self.assertEqual(log_list[0].log_name, 'Mosaic')
-                self.assertEqual(log_list[0].sample_count, 1)
+        log_list = self.setup_urlopen('get_logs_mosaic', {'dataset_id':"blah"}, 'logcoll_mosaic.txt')
+        self.assertEqual(len(log_list), 4)
+        self.assertEqual(log_list[0].log_id, '5f14ca9c-6d2d-4f86-9759-742dc738736')
+        self.assertEqual(log_list[0].log_name, 'Mosaic')
+        self.assertEqual(log_list[0].sample_count, 1)
 
 
     def test_logs_mosaic_empty(self):
@@ -516,14 +507,9 @@ class TestNVCLReader(unittest.TestCase):
     def test_datasetid_list(self):
         ''' Test get_datasetid_list()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('dataset_coll.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = fp.read()
-                dataset_id_list = rdr.get_datasetid_list("blah")
-                self.assertEqual(len(dataset_id_list), 1)
-                self.assertEqual(dataset_id_list[0], 'a4c1ed7f-1e87-444a-90ae-3fe5abf9081')
+        dataset_id_list = self.setup_urlopen('get_datasetid_list', {'nvcl_id':"blah"}, 'dataset_coll.txt')
+        self.assertEqual(len(dataset_id_list), 1)
+        self.assertEqual(dataset_id_list[0], 'a4c1ed7f-1e87-444a-90ae-3fe5abf9081')
 
 
     def test_datasetid_list_empty(self):
@@ -549,20 +535,16 @@ class TestNVCLReader(unittest.TestCase):
     def test_dataset_list(self):
         ''' Test get_dataset_list()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('dataset_coll.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = fp.read()
-                dataset_data_list = rdr.get_dataset_list("blah")
-                self.assertEqual(len(dataset_data_list), 1)
-                ds = dataset_data_list[0]
-                self.assertEqual(ds.dataset_id, 'a4c1ed7f-1e87-444a-90ae-3fe5abf9081')
-                self.assertEqual(ds.dataset_name, '6315_HP4_Mt_Block')
-                self.assertEqual(ds.borehole_uri, 'http://www.blah.blah.gov.au/resource/feature/blah/borehole/6315')
-                self.assertEqual(ds.tray_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
-                self.assertEqual(ds.section_id, '6c6b3980-8ef3-4d4e-a509-996e4f97973')
-                self.assertEqual(ds.domain_id, '1186d6e5-3102-4e60-a077-e17b8ea1079')
+        dataset_data_list = self.setup_urlopen('get_dataset_list', {'nvcl_id':"blah"}, 'dataset_coll.txt')
+        self.assertEqual(len(dataset_data_list), 1)
+        ds = dataset_data_list[0]
+        self.assertEqual(ds.dataset_id, 'a4c1ed7f-1e87-444a-90ae-3fe5abf9081')
+        self.assertEqual(ds.dataset_name, '6315_HP4_Mt_Block')
+        self.assertEqual(ds.borehole_uri, 'http://www.blah.blah.gov.au/resource/feature/blah/borehole/6315')
+        self.assertEqual(ds.tray_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
+        self.assertEqual(ds.section_id, '6c6b3980-8ef3-4d4e-a509-996e4f97973')
+        self.assertEqual(ds.domain_id, '1186d6e5-3102-4e60-a077-e17b8ea1079')
+
 
     def test_dataset_list_empty(self):
         ''' Test get_dataset_list() with an empty response
@@ -588,21 +570,16 @@ class TestNVCLReader(unittest.TestCase):
     def test_spectrallog_data(self):
         ''' Test get_spectrallog_data()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('dataset_coll.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = fp.read()
-                spectral_data_list = rdr.get_spectrallog_data("blah")
-                self.assertEqual(len(spectral_data_list), 15)
-                self.assertEqual(spectral_data_list[0].log_id, '869f6712-f259-4267-874d-d341dd07bd5')
-                self.assertEqual(spectral_data_list[0].log_name, 'Reflectance')
-                self.assertEqual(spectral_data_list[0].wavelength_units, 'nm')
-                self.assertEqual(spectral_data_list[0].sample_count, 30954)
-                self.assertEqual(spectral_data_list[0].script, {'dscl': '0.000000', 'which': '64', 'prenorm': '0', 'postnorm': '0', 'bkrem': '0', 'sgleft': '0', 'sgright': '0', 'sgpoly': '0', 'sgderiv': '0'})
-                self.assertEqual(spectral_data_list[0].script_raw, 'dscl=0.000000; which=64; prenorm=0; postnorm=0; bkrem=0; sgleft=0; sgright=0; sgpoly=0; sgderiv=0;')
-                self.assertEqual(len(spectral_data_list[0].wavelengths), 531)
-                self.assertEqual(spectral_data_list[0].wavelengths[1], 384.0)
+        spectral_data_list = self.setup_urlopen('get_spectrallog_data', {'nvcl_id':"blah"}, 'dataset_coll.txt')
+        self.assertEqual(len(spectral_data_list), 15)
+        self.assertEqual(spectral_data_list[0].log_id, '869f6712-f259-4267-874d-d341dd07bd5')
+        self.assertEqual(spectral_data_list[0].log_name, 'Reflectance')
+        self.assertEqual(spectral_data_list[0].wavelength_units, 'nm')
+        self.assertEqual(spectral_data_list[0].sample_count, 30954)
+        self.assertEqual(spectral_data_list[0].script, {'dscl': '0.000000', 'which': '64', 'prenorm': '0', 'postnorm': '0', 'bkrem': '0', 'sgleft': '0', 'sgright': '0', 'sgpoly': '0', 'sgderiv': '0'})
+        self.assertEqual(spectral_data_list[0].script_raw, 'dscl=0.000000; which=64; prenorm=0; postnorm=0; bkrem=0; sgleft=0; sgright=0; sgpoly=0; sgderiv=0;')
+        self.assertEqual(len(spectral_data_list[0].wavelengths), 531)
+        self.assertEqual(spectral_data_list[0].wavelengths[1], 384.0)
 
 
     def test_spectrallog_exception(self):
@@ -616,20 +593,15 @@ class TestNVCLReader(unittest.TestCase):
     def test_borehole_data(self):
         ''' Test get_borehole_data()
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('bh_data.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
-                bh_data_list = rdr.get_borehole_data("dummy-id", 10.0, "dummy-class")
-                self.assertEqual(len(bh_data_list), 28)
-                self.assertEqual(bh_data_list[5.0].className, 'dummy-class')
-                self.assertEqual(bh_data_list[5.0].classText, 'WHITE-MICA')
-                self.assertEqual(bh_data_list[5.0].colour, (1.0, 1.0, 0.0, 1.0))
+        bh_data_list = self.setup_urlopen('get_borehole_data', {'log_id':"dummy-id", 'height_resol':10.0, 'class_name':"dummy-class"}, 'bh_data.txt')
+        self.assertEqual(len(bh_data_list), 28)
+        self.assertEqual(bh_data_list[5.0].className, 'dummy-class')
+        self.assertEqual(bh_data_list[5.0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[5.0].colour, (1.0, 1.0, 0.0, 1.0))
 
-                self.assertEqual(bh_data_list[275.0].className, 'dummy-class')
-                self.assertEqual(bh_data_list[275.0].classText, 'WHITE-MICA')
-                self.assertEqual(bh_data_list[275.0].colour, (1.0, 1.0, 0.0, 1.0))
+        self.assertEqual(bh_data_list[275.0].className, 'dummy-class')
+        self.assertEqual(bh_data_list[275.0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[275.0].colour, (1.0, 1.0, 0.0, 1.0))
 
 
     def test_borehole_exception(self):
@@ -641,35 +613,20 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def test_image_tray_depth(self):
-        ''' Tests that can parse image tray depth data
+        ''' Tests that it can parse image tray depth data
         '''
-        rdr = self.setup_reader()
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open('img_tray_depth.txt') as fp:
-                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
-                depth_list = rdr.get_tray_depths("dummy-id")
-                self.assertEqual(len(depth_list), 50)
-                self.assertEqual(depth_list[0].sample_no, '0')
-                self.assertEqual(depth_list[0].start_value, '3.00451')
-                self.assertEqual(depth_list[0].end_value, '7.603529')
-                self.assertEqual(depth_list[3].sample_no, '3')
-                self.assertEqual(depth_list[3].start_value, '14.903137')
-                self.assertEqual(depth_list[3].end_value, '18.103138')
-
-    def setup_urlopen(self, fn, src_file):
-        rdr = self.setup_reader()
-        ret_list = []
-        with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
-            open_obj = mock_request.return_value
-            with open(src_file) as fp:
-                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
-                ret_list = getattr(rdr, fn)("dummy-id")
-        return ret_list
+        depth_list = self.setup_urlopen('get_tray_depths', {'log_id': 'dummy_id'}, 'img_tray_depth.txt')
+        self.assertEqual(len(depth_list), 50)
+        self.assertEqual(depth_list[0].sample_no, '0')
+        self.assertEqual(depth_list[0].start_value, '3.00451')
+        self.assertEqual(depth_list[0].end_value, '7.603529')
+        self.assertEqual(depth_list[3].sample_no, '3')
+        self.assertEqual(depth_list[3].start_value, '14.903137')
+        self.assertEqual(depth_list[3].end_value, '18.103138')
 
 
     def test_get_mosaic_logs(self):
-        log_list = self.setup_urlopen('get_mosaic_logs', 'logcoll_mosaic.txt')
+        log_list = self.setup_urlopen('get_mosaic_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, '5f14ca9c-6d2d-4f86-9759-742dc738736')
         self.assertEqual(log_list[0].log_name, 'Mosaic')
@@ -677,7 +634,7 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def test_get_tray_thumbnail_logs(self):
-        log_list = self.setup_urlopen('get_tray_thumbnail_logs', 'logcoll_mosaic.txt')
+        log_list = self.setup_urlopen('get_tray_thumbnail_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, '5e6fb391-5fef-4bb0-ae8e-dea25e7958d')
         self.assertEqual(log_list[0].log_name, 'Tray Thumbnail Images')
@@ -685,7 +642,7 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def test_get_tray_image_logs(self):
-        log_list = self.setup_urlopen('get_tray_image_logs', 'logcoll_mosaic.txt')
+        log_list = self.setup_urlopen('get_tray_image_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, 'bc79d76a-02ef-44e2-96f2-008a4145cf3')
         self.assertEqual(log_list[0].log_name, 'Tray Images')
@@ -693,7 +650,7 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def test_imagery_logs(self):
-        log_list = self.setup_urlopen('get_imagery_logs', 'logcoll_mosaic.txt')
+        log_list = self.setup_urlopen('get_imagery_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, 'b80a98e4-6d9b-4a58-ab04-d105c172e67')
         self.assertEqual(log_list[0].log_name, 'Imagery')
