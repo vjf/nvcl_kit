@@ -454,7 +454,8 @@ class NVCLReader:
         ''' Retrieves images of NVCL core trays
 
         :param log_id: obtained through calling 'get_mosaic_logs()' or
-            'get_thumbnail_logs()' or 'get_image_logs()' or 'get_imagery_logs()'
+            'get_tray_thumbnail_logs()' or 'get_tray_image_logs()' or
+            'get_imagery_logs()'
         :param options: optional parameters:
                  width: number of column the images are to be displayed, default value=3
                  startsampleno: the first sample image to be displayed, default value=0
@@ -467,7 +468,7 @@ class NVCLReader:
         ''' Gets core tray thumbnail images as HTML
 
         :param dataset_id: obtained through calling 'get_dataset_id_list()'
-        :param log_id: obtained through calling 'get_thumbnail_logs()'
+        :param log_id: obtained through calling 'get_tray_thumbnail_logs()'
         :param width: specify the number of column the images are to be displayed,
             default value=3
         :param startsampleno: the first sample image to be displayed,
@@ -482,7 +483,7 @@ class NVCLReader:
     def get_tray_thumb_png(self, log_id, sample_no='0'):
         ''' Gets core tray thumbnail images as PNG
 
-        :param log_id: obtained through calling 'get_thumbnail_logs()'
+        :param log_id: obtained through calling 'get_tray_thumbnail_logs()'
         :param sample_no: sample number, string e.g. '0','1','2'...
                           optional, default is '0'
         :return: thumbnail image in PNG format
@@ -519,8 +520,8 @@ class NVCLReader:
         ''' Downloads scalar data in CSV format
 
         :param log_id_list: list of log ids obtained through calling
-            'get_mosaic_logs()' or 'get_thumbnail_logs()' or
-            'get_image_logs()' or 'get_imagery_logs()'
+            'get_mosaic_logs()' or 'get_tray_thumbnail_logs()' or
+            'get_tray_image_logs()' or 'get_imagery_logs()'
         :return scalar data in CSV format
         '''
         return self.svc.download_scalar(log_id_list)
@@ -530,7 +531,8 @@ class NVCLReader:
         ''' Returns data in downsampled format, to a certain height resolution
 
         :param log_id: obtained through calling 'get_mosaic_logs()' or
-            'get_thumbnail_logs()' or 'get_image_logs()' or 'get_imagery_logs()'
+            'get_tray_thumbnail_logs()' or 'get_tray_image_logs()' or
+            'get_imagery_logs()'
         :param outputformat: (optional) string 'csv' or 'json'
         :param startdepth: (optional) start of depth range, in metres from borehole
             collar

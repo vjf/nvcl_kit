@@ -273,7 +273,7 @@ class ServiceInterface:
         return response_str
 
 
-    def _make_multi_logids(log_id_list):
+    def _make_multi_logids(self, log_id_list):
         ''' Converts a list of log ids to a logids for a HTTP GET request
             e.g. ['XX','YY','ZZ'] converts to 'logid=XX&logid=YY&logid=ZZ'
 
