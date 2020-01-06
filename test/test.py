@@ -634,7 +634,7 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def test_get_tray_thumbnail_imglogs(self):
-        log_list = self.setup_urlopen('get_tray_thumbnail_imglogs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
+        log_list = self.setup_urlopen('get_tray_thumb_imglogs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, '5e6fb391-5fef-4bb0-ae8e-dea25e7958d')
         self.assertEqual(log_list[0].log_name, 'Tray Thumbnail Images')

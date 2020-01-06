@@ -332,7 +332,7 @@ class NVCLReader:
         return self._filter_mosaic_logs(dataset_id, 'Mosaic')
 
 
-    def get_tray_thumbnail_imglogs(self, dataset_id):
+    def get_tray_thumb_imglogs(self, dataset_id):
         return self._filter_mosaic_logs(dataset_id, 'Tray Thumbnail Images')
 
 
@@ -371,7 +371,7 @@ class NVCLReader:
         ''' Retrieves images of NVCL core trays
 
         :param log_id: obtained through calling 'get_mosaic_imglogs()' or
-            'get_tray_thumbnail_imglogs()' or 'get_tray_image_imglogs()' or
+            'get_tray_thumb_imglogs()' or 'get_tray_image_imglogs()' or
             'get_imagery_imglogs()'
         :param options: optional parameters:
                  width: number of column the images are to be displayed, default value=3
@@ -385,7 +385,7 @@ class NVCLReader:
         ''' Gets core tray thumbnail images as HTML
 
         :param dataset_id: obtained through calling 'get_dataset_id_list()'
-        :param log_id: obtained through calling 'get_tray_thumbnail_imglogs()'
+        :param log_id: obtained through calling 'get_tray_thumb_imglogs()'
         :param width: specify the number of column the images are to be displayed,
             default value=3
         :param startsampleno: the first sample image to be displayed,
@@ -400,7 +400,7 @@ class NVCLReader:
     def get_tray_thumb_jpg(self, log_id, sample_no='0'):
         ''' Gets core tray thumbnail images as JPEG
 
-        :param log_id: obtained through calling 'get_tray_thumbnail_imglogs()'
+        :param log_id: obtained through calling 'get_tray_thumb_imglogs()'
         :param sample_no: sample number, string e.g. '0','1','2'...
                           optional, default is '0'
         :return: thumbnail image in PNG format
@@ -410,7 +410,7 @@ class NVCLReader:
 
     def get_tray_depths(self, log_id):
         ''' Gets tray depths
-        :param log_id: obtained through calling 'get_tray_thumbnail_imglogs()' or
+        :param log_id: obtained through calling 'get_tray_thumb_imglogs()' or
                  'get_tray_imglogs()'
         :return: a list of SimpleNamespace objects, with attributes:
             'sample_no', 'start_value' and 'end_value'
