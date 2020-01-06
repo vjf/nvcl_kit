@@ -139,7 +139,7 @@ class ServiceInterface:
                 graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
                 legend: value=yes or no, if yes - indicate to show the legend, default to yes
         '''
-        url = self.NVCL_URL + '/plotmultiscalar.html'
+        url = self.NVCL_URL + '/plotmultiscalars.html'
         if not log_id_list:
             return ""
         params = self._make_multi_logids(log_id_list, options)

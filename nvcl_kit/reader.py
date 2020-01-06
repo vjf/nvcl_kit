@@ -92,19 +92,7 @@ def bgr2rgba(bgr):
 
 
 class NVCLReader:
-    ''' A class to extract NVCL borehole data (see README.md for details):
-    (1) Instantiate class (see constructor description)
-    (2) Call get_boreholes_list() to get list of NVCL borehole data
-    (3) Call get_borehole_data() to get borehole data
-        OR call get_profilometer_data()
-        OR call get_spectrallog_data()
-        OR call get_imagelog_data()
-    OR
-    (1) Instantiate class (see constructor description)
-    (2) Call get_nvcl_id_list() get list of NVCL ids
-    (3) Call get_profilometer_data()
-        OR call get_spectrallog_data()
-        OR call get_imagelog_data()
+    ''' A class to extract NVCL borehole data (see README.md for details)
     '''
 
     def __init__(self, param_obj, wfs=None, log_lvl=None):
@@ -465,6 +453,7 @@ class NVCLReader:
                 continue
             log_type = child.findtext('./logType', default=None)
             algorithm_id = child.findtext('./algorithmoutID', default=None)
+            # Only types 1,2,5,6 can be used
             if log_id and log_name and log_type in ['1','2','5','6'] \
                                                              and algorithm_id:
                 log = SimpleNamespace(log_id=log_id,
@@ -543,7 +532,8 @@ class NVCLReader:
              legend, default to yes
         :return: one or more 2d plots as HTML
         '''
-        return self.svc.get_plot_multi_scalar(log_id_list, **options)
+        # NB: Service only plots the first 6 log ids
+        return self.svc.get_plot_multi_scalar(log_id_list[:6], **options)
 
 
     def get_imagelog_data(self, nvcl_id):
