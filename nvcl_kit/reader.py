@@ -21,7 +21,7 @@ from http.client import HTTPException
 
 from nvcl_kit.svc_interface import ServiceInterface
 
-ENFORCE_IS_PUBLIC = False
+ENFORCE_IS_PUBLIC = True
 ''' Enforce the 'is_public' flag , i.e. any data with 'is_public' set to 'false'
     will be ignored
 '''
