@@ -21,7 +21,7 @@ from http.client import HTTPException
 
 from nvcl_kit.svc_interface import ServiceInterface
 
-ENFORCE_IS_PUBLIC = True
+ENFORCE_IS_PUBLIC = False
 ''' Enforce the 'is_public' flag , i.e. any data with 'is_public' set to 'false'
     will be ignored
 '''
@@ -299,7 +299,8 @@ class NVCLReader:
                 continue
             log_type = child.findtext('./logType', default=None)
             algorithm_id = child.findtext('./algorithmoutID', default=None)
-            if log_id and log_name and log_type and algorithm_id:
+            if log_id and log_name and log_type in ['1','2','5','6'] \
+                                                             and algorithm_id:
                 log = SimpleNamespace(log_id=log_id,
                                       log_name=log_name,
                                       is_public=is_public,
@@ -480,8 +481,8 @@ class NVCLReader:
         return self.svc.get_mosaic_tray_thumbnail(dataset_id, log_id, **options)
 
 
-    def get_tray_thumb_png(self, log_id, sample_no='0'):
-        ''' Gets core tray thumbnail images as PNG
+    def get_tray_thumb_jpg(self, log_id, sample_no='0'):
+        ''' Gets core tray thumbnail images as JPEG
 
         :param log_id: obtained through calling 'get_tray_thumbnail_logs()'
         :param sample_no: sample number, string e.g. '0','1','2'...
@@ -527,7 +528,7 @@ class NVCLReader:
         return self.svc.download_scalar(log_id_list)
 
 
-    def get_sampled_scalar_data(log_id, **options):
+    def get_sampled_scalar_data(self, log_id, **options):
         ''' Returns data in downsampled format, to a certain height resolution
 
         :param log_id: obtained through calling 'get_mosaic_logs()' or
