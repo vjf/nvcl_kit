@@ -135,9 +135,9 @@ for ds in dataset_list:
 
 **10. Using an element from 'datasetid_list' in Step 8 or 'ds.dataset_id' from Step 9, can retrieve log data**
 
-
 ``` python
-log_list = reader.get_logs_scalar(ds.dataset_id)
+# Scalar log data
+log_list = reader.get_scalar_logs(ds.dataset_id)
 for log in log_list:
     print(log.log_id,
           log.log_name,
@@ -148,9 +148,63 @@ for log in log_list:
 
 
 ``` python
-log_list = reader.get_logs_mosaic(ds.dataset_id)
-for log in log_list:
-    print(log.log_id,
-          log.log_name,
-          log.sample_count)
+# Different types of image log data
+ilog_list = reader.get_all_imglogs(ds.dataset_id)
+ilog_list = reader.get_mosaic_imglogs(ds.dataset_id)
+ilog_list = reader.get_tray_thumbnail_imglogs(ds.dataset_id)
+ilog_list = reader.get_tray_imglogs(ds.dataset_id)
+ilog_list = reader.get_imagery_imglogs(ds.dataset_id)
+
+for ilog in ilog_list:
+    print(ilog.log_id,
+          ilog.log_name,
+          ilog.sample_count)
+```
+
+
+**11. Using the scalar log ids, can get scalar data
+
+```python
+# Scalar data in CSV format
+log_id_list = [l.log_id for l in log_list]
+data = reader.get_scalar_data(log_id_list)
+
+# Sampled scalar data in JSON (or CSV) format
+samples = reader.get_sampled_scalar_data(log.log_id,
+                                         outputformat='json',
+                                         startdepth=0,
+                                         enddepth=2000,
+                                         interval=100)
+
+# A data plot in PNG
+plot_data = reader.plot_scalar_png(log_id)
+
+# Data plots in HTML
+plot_data = reader.plot_scalars_html(log_id_list)
+
+```
+
+
+**12. Using the image log ids can produce images of NVCL cores
+
+```python
+ilog_list = reader.get_mosaic_imglogs(ds.dataset_id)
+for ilog in ilog_list:
+    img = reader.get_mosaic_image(ilog.log_id)
+
+ilog_list = reader.get_tray_thumbnail_imglogs(ds.dataset_id)
+for ilog in ilog_list:
+    img = reader.get_tray_thumb_html(ds.dataset_id, ilog2.log_id)
+    img = reader.get_tray_thumb_jpg(ilog2.log_id)
+
+# Use either 'get_tray_thumbnail_imglogs()' or 'get_tray_imglogs()'
+ilog_list = reader.get_tray_thumbnail_imglogs(ds.dataset_id)
+ilog_list = reader.get_tray_imglogs(ds.dataset_id)
+for ilog in ilog_list:
+    depth_list = reader.get_tray_depths(ilog.log_id)
+    for depth in depth_list:
+        print(depth.sample_no,
+              depth.start_value,
+              depth.end_value)
+
 ```
