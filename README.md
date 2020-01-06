@@ -2,7 +2,9 @@
 
 #### A simple module used to read Australian NVCL borehole data
 
-*Brief Introduction:* how to extract NVCL borehole data
+*Brief Introduction:* How to extract NVCL borehole data
+
+*NB:* There is also a rough demonstration script: 'demo.py'
 
 **1. Instantiate class**
 
@@ -151,7 +153,7 @@ for log in log_list:
 # Different types of image log data
 ilog_list = reader.get_all_imglogs(ds.dataset_id)
 ilog_list = reader.get_mosaic_imglogs(ds.dataset_id)
-ilog_list = reader.get_tray_thumbnail_imglogs(ds.dataset_id)
+ilog_list = reader.get_tray_thumb_imglogs(ds.dataset_id)
 ilog_list = reader.get_tray_imglogs(ds.dataset_id)
 ilog_list = reader.get_imagery_imglogs(ds.dataset_id)
 
@@ -179,7 +181,7 @@ samples = reader.get_sampled_scalar_data(log.log_id,
 # A data plot in PNG
 plot_data = reader.plot_scalar_png(log_id)
 
-# Data plots in HTML
+# Data plots in HTML, only plots the first 6 log ids
 plot_data = reader.plot_scalars_html(log_id_list)
 
 ```
@@ -192,13 +194,13 @@ ilog_list = reader.get_mosaic_imglogs(ds.dataset_id)
 for ilog in ilog_list:
     img = reader.get_mosaic_image(ilog.log_id)
 
-ilog_list = reader.get_tray_thumbnail_imglogs(ds.dataset_id)
+ilog_list = reader.get_tray_thumb_imglogs(ds.dataset_id)
 for ilog in ilog_list:
-    img = reader.get_tray_thumb_html(ds.dataset_id, ilog2.log_id)
-    img = reader.get_tray_thumb_jpg(ilog2.log_id)
+    img = reader.get_tray_thumb_html(ds.dataset_id, ilog.log_id)
+    img = reader.get_tray_thumb_jpg(ilog.log_id)
 
-# Use either 'get_tray_thumbnail_imglogs()' or 'get_tray_imglogs()'
-ilog_list = reader.get_tray_thumbnail_imglogs(ds.dataset_id)
+# Use either 'get_tray_thumb_imglogs()' or 'get_tray_imglogs()'
+ilog_list = reader.get_tray_thumb_imglogs(ds.dataset_id)
 ilog_list = reader.get_tray_imglogs(ds.dataset_id)
 for ilog in ilog_list:
     depth_list = reader.get_tray_depths(ilog.log_id)
