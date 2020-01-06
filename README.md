@@ -1,10 +1,8 @@
-# nvcl_kit
-
-### A simple module used to read Australian NVCL borehole data
+# nvcl_kit: A simple module used to read Australian NVCL borehole data
 
 #### Brief Introduction: How to extract NVCL borehole data
 
-**NB:** There is also a rough demonstration script: 'demo.py'
+*NB: There is also a rough demonstration script: 'demo.py'*
 
 **1. Instantiate class**
 
@@ -164,7 +162,7 @@ for ilog in ilog_list:
 ```
 
 
-**11. Using the scalar log ids, can get scalar data**
+**11. Using the scalar log ids, can get scalar data and plots of scalar data**
 
 ```python
 # Scalar data in CSV format
@@ -196,6 +194,7 @@ for ilog in ilog_list:
 
 ilog_list = reader.get_tray_thumb_imglogs(ds.dataset_id)
 for ilog in ilog_list:
+    # Either HTML or JPG
     img = reader.get_tray_thumb_html(ds.dataset_id, ilog.log_id)
     img = reader.get_tray_thumb_jpg(ilog.log_id)
 
