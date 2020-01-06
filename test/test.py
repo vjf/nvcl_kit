@@ -441,10 +441,10 @@ class TestNVCLReader(unittest.TestCase):
         self.urllib_exception_tester(OSError, rdr.get_profilometer_data, 'OS Error:', {'nvcl_id':'dummy-id'})
 
 
-    def test_logs_scalar(self):
-        ''' Tests get_logs_scalar()
+    def test_scalar_logs(self):
+        ''' Tests get_scalar_logs()
         '''
-        log_list = self.setup_urlopen('get_logs_scalar', {'dataset_id':"blah"}, 'logcoll_scalar.txt')
+        log_list = self.setup_urlopen('get_scalar_logs', {'dataset_id':"blah"}, 'logcoll_scalar.txt')
         self.assertEqual(len(log_list), 4)
         self.assertEqual(log_list[0].log_id, '2023a603-7b31-4c97-ad59-efb220d93d9')
         self.assertEqual(log_list[0].log_name, 'Tray')
@@ -454,54 +454,54 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def test_logs_scalar_empty(self):
-        ''' Tests get_logs_scalar() with an empty response
+        ''' Tests get_scalar_logs() with an empty response
         '''
         rdr = self.setup_reader()
         with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('logcoll_empty.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
-                log_list = rdr.get_logs_scalar("blah")
+                log_list = rdr.get_scalar_logs("blah")
                 self.assertEqual(len(log_list), 0)
 
 
     def test_logs_scalar_exception(self):
-        ''' Tests exception handling in get_logs_scalar()
+        ''' Tests exception handling in get_scalar_logs()
         '''
         rdr = self.setup_reader()
-        self.urllib_exception_tester(HTTPException, rdr.get_logs_scalar, 'HTTP Error:', {'dataset_id':'dummy-id'})
-        self.urllib_exception_tester(OSError, rdr.get_logs_scalar, 'OS Error:', {'dataset_id':'dummy-id'})
+        self.urllib_exception_tester(HTTPException, rdr.get_scalar_logs, 'HTTP Error:', {'dataset_id':'dummy-id'})
+        self.urllib_exception_tester(OSError, rdr.get_scalar_logs, 'OS Error:', {'dataset_id':'dummy-id'})
 
 
 
-    def test_logs_mosaic(self):
+    def test_mosaic_imglogs(self):
         ''' Tests get_logs_mosaic()
         '''
-        log_list = self.setup_urlopen('get_logs_mosaic', {'dataset_id':"blah"}, 'logcoll_mosaic.txt')
-        self.assertEqual(len(log_list), 4)
+        log_list = self.setup_urlopen('get_mosaic_imglogs', {'dataset_id':"blah"}, 'logcoll_mosaic.txt')
+        self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, '5f14ca9c-6d2d-4f86-9759-742dc738736')
         self.assertEqual(log_list[0].log_name, 'Mosaic')
         self.assertEqual(log_list[0].sample_count, 1)
 
 
-    def test_logs_mosaic_empty(self):
-        ''' Tests get_logs_mosaic() with an empty response
+    def test_mosaic_imglogs_empty(self):
+        ''' Tests get_mosaic_imglogs() with an empty response
         '''
         rdr = self.setup_reader()
         with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open('logcoll_empty.txt') as fp:
                 open_obj.__enter__.return_value.read.return_value = fp.read()
-                log_list = rdr.get_logs_mosaic("blah")
+                log_list = rdr.get_mosaic_imglogs("blah")
                 self.assertEqual(len(log_list), 0)
 
 
-    def test_logs_mosaic_exception(self):
-        ''' Tests exception handling in get_logs_mosaic()
+    def test_mosaic_imglogs_exception(self):
+        ''' Tests exception handling in get_mosaic_imglogs()
         '''
         rdr = self.setup_reader()
-        self.urllib_exception_tester(HTTPException, rdr.get_logs_mosaic, 'HTTP Error:', {'dataset_id':'dummy-id'})
-        self.urllib_exception_tester(OSError, rdr.get_logs_mosaic, 'OS Error:', {'dataset_id':'dummy-id'})
+        self.urllib_exception_tester(HTTPException, rdr.get_mosaic_imglogs, 'HTTP Error:', {'dataset_id':'dummy-id'})
+        self.urllib_exception_tester(OSError, rdr.get_mosaic_imglogs, 'OS Error:', {'dataset_id':'dummy-id'})
 
 
     def test_datasetid_list(self):
@@ -625,32 +625,32 @@ class TestNVCLReader(unittest.TestCase):
         self.assertEqual(depth_list[3].end_value, '18.103138')
 
 
-    def test_get_mosaic_logs(self):
-        log_list = self.setup_urlopen('get_mosaic_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
+    def test_get_mosaic_imglogs(self):
+        log_list = self.setup_urlopen('get_mosaic_imglogs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, '5f14ca9c-6d2d-4f86-9759-742dc738736')
         self.assertEqual(log_list[0].log_name, 'Mosaic')
         self.assertEqual(log_list[0].sample_count, 1)
 
 
-    def test_get_tray_thumbnail_logs(self):
-        log_list = self.setup_urlopen('get_tray_thumbnail_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
+    def test_get_tray_thumbnail_imglogs(self):
+        log_list = self.setup_urlopen('get_tray_thumbnail_imglogs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, '5e6fb391-5fef-4bb0-ae8e-dea25e7958d')
         self.assertEqual(log_list[0].log_name, 'Tray Thumbnail Images')
         self.assertEqual(log_list[0].sample_count, 50)
 
 
-    def test_get_tray_image_logs(self):
-        log_list = self.setup_urlopen('get_tray_image_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
+    def test_get_tray_imglogs(self):
+        log_list = self.setup_urlopen('get_tray_imglogs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, 'bc79d76a-02ef-44e2-96f2-008a4145cf3')
         self.assertEqual(log_list[0].log_name, 'Tray Images')
         self.assertEqual(log_list[0].sample_count, 50)
 
 
-    def test_imagery_logs(self):
-        log_list = self.setup_urlopen('get_imagery_logs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
+    def test_imagery_imglogs(self):
+        log_list = self.setup_urlopen('get_imagery_imglogs', {'dataset_id':'dummy-id'}, 'logcoll_mosaic.txt')
         self.assertEqual(len(log_list), 1)
         self.assertEqual(log_list[0].log_id, 'b80a98e4-6d9b-4a58-ab04-d105c172e67')
         self.assertEqual(log_list[0].log_name, 'Imagery')

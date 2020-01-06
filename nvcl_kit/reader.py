@@ -279,64 +279,6 @@ class NVCLReader:
         return depth_dict
 
 
-    def get_logs_scalar(self, dataset_id):
-        ''' Retrieves a list of log objects for scalar plot service
-
-        :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
-        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, is_public, log_type, algorithm_id
-        On error returns empty list
-        '''
-        response_str = self.svc.get_log_collection(dataset_id)
-        if not response_str:
-            return []
-        root = ET.fromstring(response_str)
-        log_list = []
-        for child in root.findall('./Log'):
-            log_id = child.findtext('./LogID', default=None)
-            log_name = child.findtext('./logName', default=None)
-            is_public = child.findtext('./ispublic', default=None)
-            if ENFORCE_IS_PUBLIC and is_public and is_public.upper() == 'FALSE':
-                continue
-            log_type = child.findtext('./logType', default=None)
-            algorithm_id = child.findtext('./algorithmoutID', default=None)
-            if log_id and log_name and log_type in ['1','2','5','6'] \
-                                                             and algorithm_id:
-                log = SimpleNamespace(log_id=log_id,
-                                      log_name=log_name,
-                                      is_public=is_public,
-                                      log_type=log_type,
-                                      algorithm_id=algorithm_id)
-                log_list.append(log)
-        return log_list
-
-
-    def get_logs_mosaic(self, dataset_id):
-        ''' Retrieves a list of log objects for mosaic service
-
-        :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
-        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, sample_count
-        On error returns empty list
-        '''
-        response_str = self.svc.get_log_collection(dataset_id, True)
-        if not response_str:
-            return []
-        root = ET.fromstring(response_str)
-        log_list = []
-        for child in root.findall('./Log'):
-            log_id = child.findtext('./LogID', default=None)
-            log_name = child.findtext('./LogName', default=None)
-            try:
-                sample_count = int(child.findtext('./SampleCount', default=0))
-            except ValueError:
-                sample_count = 0
-            if log_id and log_name:
-                log = SimpleNamespace(log_id=log_id,
-                                      log_name=log_name,
-                                      sample_count=sample_count)
-                log_list.append(log)
-        return log_list
-
-
     def get_datasetid_list(self, nvcl_id):
         ''' Retrieves a list of dataset ids
         :param nvcl_id: NVCL 'holeidentifier' parameter,
@@ -389,23 +331,32 @@ class NVCLReader:
         return dataset_list
 
 
-    def get_mosaic_logs(self, dataset_id):
+    def get_all_imglogs(self, dataset_id):
+        ''' Retrieves a list of all log objects for mosaic service
+
+        :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, sample_count
+        On error returns empty list
+        '''
+        return self._filter_mosaic_logs(dataset_id)
+
+    def get_mosaic_imglogs(self, dataset_id):
         return self._filter_mosaic_logs(dataset_id, 'Mosaic')
 
 
-    def get_tray_thumbnail_logs(self, dataset_id):
+    def get_tray_thumbnail_imglogs(self, dataset_id):
         return self._filter_mosaic_logs(dataset_id, 'Tray Thumbnail Images')
 
 
-    def get_tray_image_logs(self, dataset_id):
+    def get_tray_imglogs(self, dataset_id):
         return self._filter_mosaic_logs(dataset_id, 'Tray Images')
 
 
-    def get_imagery_logs(self, dataset_id):
+    def get_imagery_imglogs(self, dataset_id):
         return self._filter_mosaic_logs(dataset_id, 'Imagery')
 
 
-    def _filter_mosaic_logs(self, dataset_id, target_log_name):
+    def _filter_mosaic_logs(self, dataset_id, target_log_name='*'):
         response_str = self.svc.get_log_collection(dataset_id, True)
         if not response_str:
             return []
@@ -420,7 +371,7 @@ class NVCLReader:
                 sample_count = 0.0
             if not log_id or not log_name:
                 continue
-            if target_log_name.lower() == log_name.lower():
+            if target_log_name.lower() == log_name.lower() or target_log_name=='*':
                 dataset_obj = SimpleNamespace(log_id=log_id,
                                           log_name=log_name,
                                           sample_count=sample_count)
@@ -428,35 +379,12 @@ class NVCLReader:
         return dataset_list
 
 
-    def get_plot_logs(self, dataset_id):
-        ''' Used for getting log ids for making data plots
-
-        :param dataset_id: a dataset id, taken from 'get_dataset_id_list()'
-        :return: a list of SimpleNamespace objects, with attributes:
-             'log_id' and 'log_name'
-        '''
-        response_str = self.svc.get_log_collection(dataset_id)
-        if not response_str:
-            return []
-        root = ET.fromstring(response_str)
-        dataset_list = []
-        for child in root.findall('./Log'):
-            log_id = child.findtext('./LogID', default=None)
-            log_name = child.findtext('./LogName', default=None)
-            if not log_id or not log_name:
-                continue
-            dataset_obj = SimpleNamespace(log_id=log_id,
-                                          log_name=log_name)
-            dataset_list.append(dataset_obj)
-        return dataset_list
-
-
     def get_mosaic_image(self, log_id, **options):
         ''' Retrieves images of NVCL core trays
 
-        :param log_id: obtained through calling 'get_mosaic_logs()' or
-            'get_tray_thumbnail_logs()' or 'get_tray_image_logs()' or
-            'get_imagery_logs()'
+        :param log_id: obtained through calling 'get_mosaic_imglogs()' or
+            'get_tray_thumbnail_imglogs()' or 'get_tray_image_imglogs()' or
+            'get_imagery_imglogs()'
         :param options: optional parameters:
                  width: number of column the images are to be displayed, default value=3
                  startsampleno: the first sample image to be displayed, default value=0
@@ -469,7 +397,7 @@ class NVCLReader:
         ''' Gets core tray thumbnail images as HTML
 
         :param dataset_id: obtained through calling 'get_dataset_id_list()'
-        :param log_id: obtained through calling 'get_tray_thumbnail_logs()'
+        :param log_id: obtained through calling 'get_tray_thumbnail_imglogs()'
         :param width: specify the number of column the images are to be displayed,
             default value=3
         :param startsampleno: the first sample image to be displayed,
@@ -484,7 +412,7 @@ class NVCLReader:
     def get_tray_thumb_jpg(self, log_id, sample_no='0'):
         ''' Gets core tray thumbnail images as JPEG
 
-        :param log_id: obtained through calling 'get_tray_thumbnail_logs()'
+        :param log_id: obtained through calling 'get_tray_thumbnail_imglogs()'
         :param sample_no: sample number, string e.g. '0','1','2'...
                           optional, default is '0'
         :return: thumbnail image in PNG format
@@ -494,8 +422,8 @@ class NVCLReader:
 
     def get_tray_depths(self, log_id):
         ''' Gets tray depths
-        :param log_id: obtained through calling 'get_tray_thumbnail_logs()' or
-                 'get_tray_image_logs()'
+        :param log_id: obtained through calling 'get_tray_thumbnail_imglogs()' or
+                 'get_tray_imglogs()'
         :return: a list of SimpleNamespace objects, with attributes:
             'sample_no', 'start_value' and 'end_value'
         '''
@@ -517,12 +445,42 @@ class NVCLReader:
         return image_tray_list
 
 
+    def get_scalar_logs(self, dataset_id):
+        ''' Retrieves a list of log objects for scalar plot service
+
+        :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, is_public, log_type, algorithm_id
+        On error returns empty list
+        '''
+        response_str = self.svc.get_log_collection(dataset_id)
+        if not response_str:
+            return []
+        root = ET.fromstring(response_str)
+        log_list = []
+        for child in root.findall('./Log'):
+            log_id = child.findtext('./LogID', default=None)
+            log_name = child.findtext('./logName', default=None)
+            is_public = child.findtext('./ispublic', default=None)
+            if ENFORCE_IS_PUBLIC and is_public and is_public.upper() == 'FALSE':
+                continue
+            log_type = child.findtext('./logType', default=None)
+            algorithm_id = child.findtext('./algorithmoutID', default=None)
+            if log_id and log_name and log_type in ['1','2','5','6'] \
+                                                             and algorithm_id:
+                log = SimpleNamespace(log_id=log_id,
+                                      log_name=log_name,
+                                      is_public=is_public,
+                                      log_type=log_type,
+                                      algorithm_id=algorithm_id)
+                log_list.append(log)
+        return log_list
+
+
     def get_scalar_data(self, log_id_list):
         ''' Downloads scalar data in CSV format
 
         :param log_id_list: list of log ids obtained through calling
-            'get_mosaic_logs()' or 'get_tray_thumbnail_logs()' or
-            'get_tray_image_logs()' or 'get_imagery_logs()'
+            'get_scalar_logs()'
         :return scalar data in CSV format
         '''
         return self.svc.download_scalar(log_id_list)
@@ -531,9 +489,7 @@ class NVCLReader:
     def get_sampled_scalar_data(self, log_id, **options):
         ''' Returns data in downsampled format, to a certain height resolution
 
-        :param log_id: obtained through calling 'get_mosaic_logs()' or
-            'get_tray_thumbnail_logs()' or 'get_tray_image_logs()' or
-            'get_imagery_logs()'
+        :param log_id: obtained through calling 'get_scalar_logs()'
         :param outputformat: (optional) string 'csv' or 'json'
         :param startdepth: (optional) start of depth range, in metres from borehole
             collar
@@ -547,7 +503,7 @@ class NVCLReader:
     def plot_scalar_png(self, log_id, **options):
         ''' Draws a plot as an image in PNG format.
 
-        :param log_id: obtained through calling 'get_plot_logs()'
+        :param log_id: obtained through calling 'get_scalar_logs()'
         :param startdepth: (optional) the start depth of a borehole collar,
              default value=0
         :param enddepth: (optional) the end depth of a borehole collar,
@@ -570,7 +526,7 @@ class NVCLReader:
         ''' Draws multiple plots, returned in HTML format
 
         :param log_id_list: a list of up to 6 log ids, obtained through calling
-               'get_plot_logs()'
+               'get_scalar_logs()'
         :param startdepth: (optional) the start depth of a borehole collar,
              default value=0
         :param enddepth: (optional) the end depth of a borehole collar,
