@@ -77,7 +77,8 @@ class ServiceInterface:
                   endsampleno: the last sample image to be displayed, default value=99999
         '''
         url = self.NVCL_URL + '/mosaictraythumbnail.html'
-        params = {'datasetid': dataset_id, 'logid' : log_id, 'width': width, 'startsampleno': start_sampleno, 'endsampleno': end_sampleno}
+        params = {'datasetid': dataset_id, 'logid' : log_id}
+        params.update(options)
         return self._get_response_str(url, params)
 
 
@@ -230,7 +231,7 @@ class ServiceInterface:
         mosaic_svc = 'no'
         if use_mosaic:
             mosaic_svc = 'yes'
-        params = {'datasetid' : dataset_id, 'mosaic_svc': mosaic_svc}
+        params = {'datasetid' : dataset_id, 'mosaicsvc': mosaic_svc}
         return self._get_response_str(url, params)
 
 
