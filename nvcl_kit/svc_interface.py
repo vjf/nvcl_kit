@@ -142,8 +142,7 @@ class ServiceInterface:
         url = self.NVCL_URL + '/plotmultiscalar.html'
         if not log_id_list:
             return ""
-        params = self._make_multi_logids(log_id_list)
-        params.update(options)
+        params = self._make_multi_logids(log_id_list, options)
         return self._get_response_str(url, params)
 
 
@@ -274,17 +273,13 @@ class ServiceInterface:
         return response_str
 
 
-    def _make_multi_logids(self, log_id_list):
+    def _make_multi_logids(self, log_id_list, options={}):
         ''' Converts a list of log ids to a logids for a HTTP GET request
             e.g. ['XX','YY','ZZ'] converts to 'logid=XX&logid=YY&logid=ZZ'
 
         :param log_id_list: log id list to be converted
         :returns: logid GET request string
         '''
-        if not log_id_list:
-            return {}
-        if len(log_id_list) == 1:
-            params = {'logid': log_id_list[0]}
-        else:
-            params = {'logid' : log_id_list[0] + '&' + '&'.join([ 'logid={}'.format(log_id) for log_id in log_id_list[1:]])}
+        params = [('logid', log_id) for log_id in log_id_list]
+        params += list(options.items())
         return params
