@@ -216,15 +216,10 @@ class NVCLReader:
     def get_borehole_data(self, log_id, height_resol, class_name):
         ''' Retrieves borehole mineral data for a borehole
 
-        :param log_id: borehole log identifier, string e.g. 'ce2df1aa-d3e7-4c37-97d5-5115fc3c33d'
-                       This is the first id from the list of triplets [log id, log type, log name]
-                       fetched from 'get_imagelog_data()'
+        :param log_id: borehole log identifier, string e.g. 'ce2df1aa-d3e7-4c37-97d5-5115fc3c33d' This is the first id from the list of triplets [log id, log type, log name] fetched from 'get_imagelog_data()'
         :param height_resol: height resolution, float
         :param class_name: name of mineral class
-        :returns: dict: key - depth, float; value - SimpleNamespace(
-                                                    'colour'= RGBA float tuple,
-                                                    'className'= class name,
-                                                    'classText'= mineral name )
+        :returns: dict: key - depth, float; value - SimpleNamespace( 'colour'= RGBA float tuple, 'className'= class name, 'classText'= mineral name )
         '''
         LOGGER.debug(" get_borehole_data(%s, %d, %s)", log_id, height_resol, class_name)
         # Send HTTP request, get response
@@ -269,9 +264,7 @@ class NVCLReader:
 
     def get_datasetid_list(self, nvcl_id):
         ''' Retrieves a list of dataset ids
-        :param nvcl_id: NVCL 'holeidentifier' parameter,
-            the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()'
-            or 'get_nvcl_id_list()'
+        :param nvcl_id: NVCL 'holeidentifier' parameter, the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
         :returns list of dataset ids
         '''
         response_str = self.svc.get_dataset_collection(nvcl_id)
@@ -288,11 +281,8 @@ class NVCLReader:
 
     def get_dataset_list(self, nvcl_id):
         ''' Retrieves a list of dataset objects
-        :param nvcl_id: NVCL 'holeidentifier' parameter,
-            the 'nvcl_id' from each dict item retrieved from
-            'get_boreholes_list()' or 'get_nvcl_id_list()'
-        :returns list of SimpleNamespace objects, attributes are: dataset_id,
-            dataset_name, borehole_uri, tray_id, section_id, domain_id
+        :param nvcl_id: NVCL 'holeidentifier' parameter, the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :returns list of SimpleNamespace objects, attributes are: dataset_id, dataset_name, borehole_uri, tray_id, section_id, domain_id
         '''
         response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
@@ -323,8 +313,7 @@ class NVCLReader:
         ''' Retrieves a list of all log objects for mosaic service
 
         :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
-        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, sample_count
-        On error returns empty list
+        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, sample_count. On error returns empty list
         '''
         return self._filter_mosaic_logs(dataset_id)
 
@@ -370,9 +359,7 @@ class NVCLReader:
     def get_mosaic_image(self, log_id, **options):
         ''' Retrieves images of NVCL core trays
 
-        :param log_id: obtained through calling 'get_mosaic_imglogs()' or
-            'get_tray_thumb_imglogs()' or 'get_tray_image_imglogs()' or
-            'get_imagery_imglogs()'
+        :param log_id: obtained through calling 'get_mosaic_imglogs()' or 'get_tray_thumb_imglogs()' or 'get_tray_image_imglogs()' or 'get_imagery_imglogs()'
         :param options: optional parameters:
                  width: number of column the images are to be displayed, default value=3
                  startsampleno: the first sample image to be displayed, default value=0
@@ -384,14 +371,11 @@ class NVCLReader:
     def get_tray_thumb_html(self, dataset_id, log_id, **options):
         ''' Gets core tray thumbnail images as HTML
 
-        :param dataset_id: obtained through calling 'get_dataset_id_list()'
+        :param dataset_id: obtained through calling 'get_datasetid_list()'
         :param log_id: obtained through calling 'get_tray_thumb_imglogs()'
-        :param width: specify the number of column the images are to be displayed,
-            default value=3
-        :param startsampleno: the first sample image to be displayed,
-            default value=0
-        :param endsampleno: the last sample image to be displayed,
-            default value=99999
+        :param width: specify the number of column the images are to be displayed, default value=3
+        :param startsampleno: the first sample image to be displayed, default value=0
+        :param endsampleno: the last sample image to be displayed, default value=99999
         :return: thumbnail image in HTML format
         '''
         return self.svc.get_mosaic_tray_thumbnail(dataset_id, log_id, **options)
@@ -401,8 +385,7 @@ class NVCLReader:
         ''' Gets core tray thumbnail images as JPEG
 
         :param log_id: obtained through calling 'get_tray_thumb_imglogs()'
-        :param sample_no: sample number, string e.g. '0','1','2'...
-                          optional, default is '0'
+        :param sample_no: sample number, string e.g. '0','1','2'...  optional, default is '0'
         :return: thumbnail image in PNG format
         '''
         return self.svc.get_display_tray_thumb(log_id, sample_no)
@@ -410,10 +393,8 @@ class NVCLReader:
 
     def get_tray_depths(self, log_id):
         ''' Gets tray depths
-        :param log_id: obtained through calling 'get_tray_thumb_imglogs()' or
-                 'get_tray_imglogs()'
-        :return: a list of SimpleNamespace objects, with attributes:
-            'sample_no', 'start_value' and 'end_value'
+        :param log_id: obtained through calling 'get_tray_thumb_imglogs()' or 'get_tray_imglogs()'
+        :return: a list of SimpleNamespace objects, with attributes: 'sample_no', 'start_value' and 'end_value'
         '''
         response_str = self.svc.get_image_tray_depth(log_id)
         if not response_str:
@@ -437,8 +418,7 @@ class NVCLReader:
         ''' Retrieves a list of log objects for scalar plot service
 
         :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
-        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, is_public, log_type, algorithm_id
-        On error returns empty list
+        :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, is_public, log_type, algorithm_id. On error returns empty list
         '''
         response_str = self.svc.get_log_collection(dataset_id)
         if not response_str:
@@ -468,9 +448,8 @@ class NVCLReader:
     def get_scalar_data(self, log_id_list):
         ''' Downloads scalar data in CSV format
 
-        :param log_id_list: list of log ids obtained through calling
-            'get_scalar_logs()'
-        :return scalar data in CSV format
+        :param log_id_list: list of log ids obtained through calling 'get_scalar_logs()'
+        :return: scalar data in CSV format
         '''
         return self.svc.download_scalar(log_id_list)
 
@@ -638,21 +617,14 @@ class NVCLReader:
 
 
     def get_boreholes_list(self):
-        ''' Returns a list of dictionary objects, extracted from WFS requests of
-            boreholes. Fields are mostly taken from GeoSciML v4.1 Borehole View:
-              'nvcl_id', 'identifier', 'name', 'description', 'purpose',
-              'status', 'drillingMethod', 'operator', 'driller', 'drillStartDate',
-              'drillEndDate', 'startPoint', 'inclinationType', 'href',
-              'boreholeMaterialCustodian', 'boreholeLength_m', 'elevation_m',
-              'elevation_srs', 'positionalAccuracy', 'source', 'x', 'y, 'z',
-              'parentBorehole_uri', 'metadata_uri', 'genericSymbolizer'
+        ''' Returns a list of dictionary objects, extracted from WFS requests of boreholes. Fields are mostly taken from GeoSciML v4.1 Borehole View: \
+            'nvcl_id', 'identifier', 'name', 'description', 'purpose', 'status', 'drillingMethod', 'operator', 'driller', 'drillStartDate', 'drillEndDate', 'startPoint', 'inclinationType', 'href', 'boreholeMaterialCustodian', 'boreholeLength_m', 'elevation_m', 'elevation_srs', 'positionalAccuracy', 'source', 'x', 'y, 'z', 'parentBorehole_uri', 'metadata_uri', 'genericSymbolizer' \
             NB: (1) Depending on the WFS, not all fields will have values
                 (2) 'href' corresponds to 'gsmlp:identifier'
                 (3) 'x', 'y', 'z' are x-coordinate, y-coordinate and elevation
                 (4) 'nvcl_id' is the GML 'id', used as an id in the NVCL services
 
-            :returns: a list of dictionaries whose fields correspond to a response
-                      from a WFS request of GeoSciML v4.1 BoreholeView
+            :returns: a list of dictionaries whose fields correspond to a response from a WFS request of GeoSciML v4.1 BoreholeView
         '''
         return self.borehole_list  
 
