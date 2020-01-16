@@ -42,8 +42,9 @@ class ServiceInterface:
     def get_dataset_collection(self, nvcl_id):
         ''' Retrieves a dataset for a particular borehole
 
-        :param nvcl_id: NVCL 'holeidentifier' parameter,
-                        the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :param nvcl_id: NVCL 'holeidentifier' parameter, \
+        the 'nvcl_id' from each dict item retrieved from \
+        'get_boreholes_list()' or 'get_nvcl_id_list()'
         :returns: the response as a byte string or an empty string upon error
         '''
         url = self.NVCL_URL + '/getDatasetCollection.html'
@@ -55,7 +56,7 @@ class ServiceInterface:
         ''' Retrieves images of NVCL core trays
 
         :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
-        :param options: optional parameters:
+        :param options: optional parameters: \
                  width: number of column the images are to be displayed, default value=3
                  startsampleno: the first sample image to be displayed, default value=0
                  endsampleno: the last sample image to be displayed, default value=99999
@@ -71,7 +72,7 @@ class ServiceInterface:
 
         :param dataset_id: obtained through calling the getDatasetCollection service
         :param logid: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes, with LogName equal Tray Thumbnail Images
-        :param options: optional parameters:
+        :param options: optional parameters: \
                   width: specify the number of column the images are to be displayed, default value=3
                   startsampleno: the first sample image to be displayed, default value=0
                   endsampleno: the last sample image to be displayed, default value=99999
@@ -158,12 +159,11 @@ class ServiceInterface:
 
 
     def download_tsg(self, email, dataset_id, **options):
-        ''' When triggered, the TSG download Service will prepare TSG files
-            from NVCL database datasets and make them available for download.
+        ''' When triggered, the TSG download Service will prepare TSG files from NVCL database datasets and make them available for download.
 
         :param email: user's email address to identify the user
         :param dataset_id: GUID dataset identifier of the dataset to be prepared (list of datasetid can be obtained through calling the NVCL Data Services getDatasetCollection service)
-        :param options: optional parameters:
+        :param options: optional parameters: \
             linescan: Prepare linescan imagery with this dataset. Setting this 
               to 'no' will reduce the size of the download significantly but
               users will not be able to see the highest resolution images.
@@ -195,7 +195,7 @@ class ServiceInterface:
 
         :param email: user's email address to identify the user
         :param borehole_id: gml feature identifier of the dataset to be prepared
-        :param options: dictionary of optional parameters:
+        :param options: dictionary of optional parameters: \
             typename: the type name of the gml feature to prepare; default value
               is 'sa:SamplingFeatureCollection'.
             forcerecreate: Force the Service to delete the cached version of
