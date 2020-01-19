@@ -310,30 +310,58 @@ class NVCLReader:
 
 
     def get_all_imglogs(self, dataset_id):
-        ''' Retrieves a list of all log objects for mosaic service
+        ''' Retrieves a list of all log objects from mosaic service
 
-        :param dataset_id: dataset_id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :param dataset_id: dataset id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
         :returns: list of SimpleNamespace() objects, attributes are: log_id, log_name, sample_count. On error returns empty list
         '''
         return self._filter_mosaic_logs(dataset_id)
 
+
     def get_mosaic_imglogs(self, dataset_id):
+        ''' Retrieves a list of 'Mosaic' log objects from mosaic service
+
+        :param dataset_id: dataset id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :return: list of SimpleNamespace objects. Fields are: 'log_id', 'log_name', 'sample_count'. On error returns an empty list.
+        '''
         return self._filter_mosaic_logs(dataset_id, 'Mosaic')
 
 
     def get_tray_thumb_imglogs(self, dataset_id):
+        ''' Retrieves a list of 'Tray Thumbnail Images' log objects from mosaic service
+
+        :param dataset_id: dataset id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :return: list of SimpleNamespace objects. Fields are: 'log_id', 'log_name', 'sample_count'. On error returns an empty list.
+        '''
         return self._filter_mosaic_logs(dataset_id, 'Tray Thumbnail Images')
 
 
     def get_tray_imglogs(self, dataset_id):
+        ''' Retrieves 'Tray Image' log objects from mosaic service
+
+        :param dataset_id: dataset id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :return: list of SimpleNamespace objects. Fields are: 'log_id', 'log_name', 'sample_count'. On error returns an empty list.
+        '''
         return self._filter_mosaic_logs(dataset_id, 'Tray Images')
 
 
     def get_imagery_imglogs(self, dataset_id):
+        ''' Retrieves 'Imagery' log objects from mosaic service
+
+        :param dataset_id: dataset id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :return: list of SimpleNamespace objects. Fields are: 'log_id', 'log_name', 'sample_count'. On error returns an empty list.
+        '''
+
         return self._filter_mosaic_logs(dataset_id, 'Imagery')
 
 
     def _filter_mosaic_logs(self, dataset_id, target_log_name='*'):
+        ''' Retrieves logs with a particular name using log collection mosaic service
+
+        :param dataset_id: dataset id, taken from 'get_datasetid_list()' or 'get_dataset_list()'
+        :param target_log_name: (optional) log name to search for. Default is '*' which retrieves all logs
+        :return: list of SimpleNamespace objects. Fields are: log_id, log_name, sample_count
+        '''
         response_str = self.svc.get_log_collection(dataset_id, True)
         if not response_str:
             return []
