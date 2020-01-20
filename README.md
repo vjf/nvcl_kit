@@ -1,5 +1,9 @@
 # nvcl_kit: A simple module used to read Australian NVCL borehole data
 
+[![pipeline status](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/badges/master/pipeline.svg)](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/commits/master)
+[![coverage report](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/badges/master/coverage.svg)](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/commits/master)
+
+
 #### Brief Introduction: How to extract NVCL borehole data
 
 *NB: There is also a rough demonstration script: 'demo.py'*
