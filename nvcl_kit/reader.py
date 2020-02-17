@@ -99,7 +99,7 @@ class NVCLReader:
         '''
         :param param_obj: SimpleNamespace() object with parameters
         Fields are: 
-          NVCL_URL - URL of MVCL service
+          NVCL_URL - URL of NVCL service
           WFS_URL - URL of WFS service, GeoSciML V4.1 BoreholeView
           WFS_VERSION - (optional - default "1.1.0")
           BOREHOLE_CRS - (optional - default "EPSG:4283")
