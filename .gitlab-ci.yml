@@ -45,7 +45,7 @@ build:
 documentation:
   stage: Documentation
   script:
-    - pip install sphinx sphinx-rtd-theme
+    - pip install sphinx sphinx-rtd-theme owslib
     - cd doc ; make html
     - mv _build/html/ ../public/
   artifacts:
