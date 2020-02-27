@@ -65,7 +65,8 @@ NS = {'wfs':"http://www.opengis.net/wfs",
       'xlink':"http://www.w3.org/1999/xlink",
       'gml':"http://www.opengis.net/gml",
       'er':"urn:cgi:xmlns:GGIC:EarthResource:1.1",
-      'xsi':"http://www.w3.org/2001/XMLSchema-instance"}
+      'xsi':"http://www.w3.org/2001/XMLSchema-instance",
+      'gml32':"http://www.opengis.net/gml/3.2"}
 
 
 # From GeoSciML BoreholeView 4.1
@@ -102,14 +103,14 @@ class NVCLReader:
           NVCL_URL - URL of NVCL service
           WFS_URL - URL of WFS service, GeoSciML V4.1 BoreholeView
           WFS_VERSION - (optional - default "1.1.0")
-          BOREHOLE_CRS - (optional - default "EPSG:4283")
-          BBOX - (optional - default {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}) bounding box in EPSG:4283, only boreholes within box are retrieved
+          BOREHOLE_CRS - (optional - default "EPSG:4326")
+          BBOX - (optional - default {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}) bounding box in EPSG:4326, only boreholes within box are retrieved
           MAX_BOREHOLES - (optional - default 0) Maximum number of boreholes to retrieve. If < 1 then all boreholes are loaded
 
         e.g.
         from types import SimpleNamespace
         param_obj = SimpleNamespace()
-        # Uses EPSG:4283
+        # Uses EPSG:4326
         param_obj.BBOX = { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
         param_obj.WFS_URL = "http://blah.blah.blah/geoserver/wfs"
         param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
@@ -169,7 +170,7 @@ class NVCLReader:
 
         # Roughly check BOREHOLE_CRS EPSG: value
         if not hasattr(self.param_obj, 'BOREHOLE_CRS'):
-            self.param_obj.BOREHOLE_CRS = "EPSG:4283"
+            self.param_obj.BOREHOLE_CRS = "EPSG:4326" # "EPSG:4283"
         elif not isinstance(self.param_obj.BOREHOLE_CRS, str) or \
              "EPSG:" not in self.param_obj.BOREHOLE_CRS.upper() or \
              not self.param_obj.BOREHOLE_CRS[-4:].isnumeric():
@@ -191,6 +192,13 @@ class NVCLReader:
             LOGGER.warning("'MAX_BOREHOLES' parameter is not an integer")
             return
 
+        # Check USE_LOCAL_FILTERING
+        if not hasattr(self.param_obj, 'USE_LOCAL_FILTERING'):
+            self.param_obj.USE_LOCAL_FILTERING = False
+        if not isinstance(self.param_obj.USE_LOCAL_FILTERING, bool):
+            LOGGER.warning("'USE_LOCAL_FILTERING' parameter is not boolean")
+            return
+
         # If owslib wfs is not supplied
         if wfs is None:
             try:
@@ -207,7 +215,7 @@ class NVCLReader:
                 LOGGER.warning("OS Error: %s", str(os_exc))
         else:
             self.wfs = wfs
-        if self.wfs and not self._fetch_borehole_list(param_obj.MAX_BOREHOLES):
+        if self.wfs and not self._fetch_borehole_list():
             self.wfs = None
 
         self.svc = ServiceInterface(self.param_obj.NVCL_URL, TIMEOUT)
@@ -667,48 +675,115 @@ class NVCLReader:
         return [bh['nvcl_id'] for bh in self.borehole_list]
 
 
-    def _fetch_borehole_list(self, max_boreholes):
+    def _wfs_getfeature(self):
+        response_str = b''
+        bhv_list = []
+        # Don't use local filtering, can be both WFS v1.1.0 or v2.0.0
+        if not self.param_obj.USE_LOCAL_FILTERING:
+            # FIXME: Can't filter for BBOX and nvclCollection==true at the same time
+            # [owslib's BBox uses 'ows:BoundingBox', not supported in WFS]
+            # so is best to do the BBOX manually
+            filter_ = PropertyIsLike(propertyname='gsmlp:nvclCollection', literal='true', matchCase=False)
+            # filter_2 = BBox([self.param_obj.BBOX['west'], self.param_obj.BBOX['south'], self.param_obj.BBOX['east'],
+            #              self.param_obj.BBOX['north']], crs=self.param_obj.BOREHOLE_CRS)
+            # filter_3 = And([filter_, filter_2])
+            filterxml = etree.tostring(filter_.toXML()).decode("utf-8")
+            try:
+                getfeat_params = { 'typename': 'gsmlp:BoreholeView', 'filter': filterxml }
+                if self.param_obj.WFS_VERSION != '2.0.0':
+                    getfeat_params['srsname'] = self.param_obj.BOREHOLE_CRS
+                response = self.wfs.getfeature(**getfeat_params)
+                response_str = bytes(response.read(), encoding='ascii')
+            except (RequestException, HTTPException, ServiceException, OSError) as exc:
+                LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
+                return bhv_list
+            root = ET.fromstring(response_str)
+            return root.findall('./*/gsmlp:BoreholeView', NS)
+
+        elif self.param_obj.WFS_VERSION == "2.0.0":
+            RECORD_INC = 10000
+            record_cnt = 0
+            done = False
+            bhv_list = []
+            while not done:
+                try:
+                    getfeat_params = { 'typename':'gsmlp:BoreholeView',
+                                       'maxfeatures': RECORD_INC,
+                                       'startindex': record_cnt}
+                    # SRS name is not a parameter in v2.0.0
+                    LOGGER.debug('_wfs_getfeature(): getfeat_params = %s', repr(getfeat_params))
+                    response = self.wfs.getfeature(**getfeat_params)
+                    resp_s = bytes(response.read(), encoding='ascii')
+                    LOGGER.debug('_wfs_getfeature(): resp_s = %s', resp_s)
+                except (RequestException, HTTPException, ServiceException, OSError) as exc:
+                    LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
+                    return bhv_list
+                record_cnt += RECORD_INC
+                root = ET.fromstring(resp_s)
+                bhv_list += [ x for x in root.findall('./*/gsmlp:BoreholeView', NS)]
+                num_ret = root.attrib.get('numberReturned', '0')
+                LOGGER.debug('_wfs_getfeature(): num_ret = %s',  num_ret)
+                LOGGER.debug('record_cnt = %d', record_cnt)
+                done = num_ret == '0'
+
+            return bhv_list
+        else:
+            LOGGER.error("Cannot have USE_LOCAL_FILTERING and WFS_VERSION < 2.0.0")
+            return []
+
+
+    def _fetch_borehole_list(self):
         ''' Returns a list of WFS borehole data within bounding box, but only NVCL boreholes
             [ { 'nvcl_id': XXX, 'x': XXX, 'y': XXX, 'href': XXX, ... }, { ... } ]
             See description of 'get_borehole_list()' for more info
 
-        :param max_boreholes: maximum number of boreholes to retrieve
-        :return: Same list as 'get_borehole_list()'
+        :return: True if operation succeeded
         '''
-        LOGGER.debug("_fetch_boreholes_list(%d)", max_boreholes)
-        # Can't filter for BBOX and nvclCollection==true at the same time
-        # [owslib's BBox uses 'ows:BoundingBox', not supported in WFS]
-        # so is best to do the BBOX manually
-        filter_ = PropertyIsLike(propertyname='gsmlp:nvclCollection', literal='true', matchCase=False)
-        # filter_2 = BBox([Param.BBOX['west'], Param.BBOX['south'], Param.BBOX['east'],
-        #                  Param.BBOX['north']], crs=Param.BOREHOLE_CRS)
-        # filter_3 = And([filter_, filter_2])
-        filterxml = etree.tostring(filter_.toXML()).decode("utf-8")
-        response_str = ''
-        try:
-            response = self.wfs.getfeature(typename='gsmlp:BoreholeView',
-                                           filter=filterxml,
-                                           srsname=self.param_obj.BOREHOLE_CRS)
-            response_str = bytes(response.read(), encoding='ascii')
-        except (RequestException, HTTPException, ServiceException, OSError) as exc:
-            LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
+        LOGGER.debug("_fetch_boreholes_list()")
+        bhv_list = self._wfs_getfeature()
+        if len(bhv_list)==0:
+            LOGGER.debug('_fetch_boreholes_list(): No response')
             return False
+        LOGGER.debug('len(bhv_list) = %d', len(bhv_list))
+        LOGGER.debug('bhv_list = %s', repr(bhv_list))
         borehole_list = []
-        LOGGER.debug('_fetch_boreholes_list() resp= %s', response_str[:100])
         borehole_cnt = 0
-        root = ET.fromstring(response_str)
+        record_cnt = 0
 
-        for child in root.findall('./*/gsmlp:BoreholeView', NS):
-            nvcl_id = child.attrib.get('{'+NS['gml']+'}id', '').split('.')[-1:][0]
-            is_nvcl = child.findtext('./gsmlp:nvclCollection', default="false", namespaces=NS)
+        for i in range(len(bhv_list)):
+            LOGGER.debug('i = %d', i)
+            child = bhv_list[i]
+            LOGGER.debug('len(bhv_list) = %d', len(bhv_list))
+            LOGGER.debug('child = %s',  ET.tostring(child))
+            # WFS v2.0.0 uses gml32
+            if self.param_obj.WFS_VERSION == '2.0.0':
+                id_str = '{'+NS['gml32']+'}id'
+            else:
+                id_str = '{'+NS['gml']+'}id'
+            nvcl_id = child.attrib.get(id_str, '').split('.')[-1:][0]
+
+            # Some services don't use a namepace for their id
+            if nvcl_id == '':
+                nvcl_id = child.attrib.get('id', '').split('.')[-1:][0]
+
+            is_nvcl = child.findtext('./gsmlp:nvclCollection', default="?????", namespaces=NS)
+            LOGGER.debug("is_nvcl = %s", is_nvcl)
+            LOGGER.debug("nvcl_id = %s", nvcl_id)
             if is_nvcl.lower() == "true":
                 borehole_dict = {'nvcl_id': nvcl_id}
 
                 # Finds borehole collar x,y assumes units are degrees
                 x_y = child.findtext('./gsmlp:shape/gml:Point/gml:pos', default="? ?",
                                      namespaces=NS).split(' ')
+                reverse_coords = False
+                if x_y == ['?', '?']:
+                    point = child.findtext('./gsmlp:shape', default="POINT(0.0 0.0)", namespaces=NS).strip(' ')
+                    reverse_coords = True
+                    x_y = point.partition('(')[2].rstrip(')').split(' ')
+                LOGGER.debug('x_y = %s', repr(x_y))
+
                 try:
-                    if self.param_obj.BOREHOLE_CRS != 'EPSG:4283':
+                    if self.param_obj.BOREHOLE_CRS != 'EPSG:4326' or reverse_coords:
                         borehole_dict['y'] = float(x_y[0]) # lat
                         borehole_dict['x'] = float(x_y[1]) # lon
                     else:
@@ -733,6 +808,12 @@ class NVCLReader:
                 except ValueError:
                     borehole_dict['z'] = 0.0
 
+                LOGGER.debug('borehole_dict = %s', repr(borehole_dict))
+                LOGGER.debug('%s < %s, %s > %s', self.param_obj.BBOX['west'], borehole_dict['x'],
+                                                 self.param_obj.BBOX['east'], borehole_dict['x'])
+                LOGGER.debug('%s > %s, %s < %s', self.param_obj.BBOX['north'], borehole_dict['y'],
+                                                 self.param_obj.BBOX['south'], borehole_dict['y'])
+
                 # Only accept if within bounding box
                 if self.param_obj.BBOX['west'] < borehole_dict['x'] and \
                    self.param_obj.BBOX['east'] > borehole_dict['x'] and \
@@ -740,7 +821,11 @@ class NVCLReader:
                    self.param_obj.BBOX['south'] < borehole_dict['y']:
                     borehole_cnt += 1
                     self.borehole_list.append(borehole_dict)
-                if max_boreholes > 0 and borehole_cnt >= max_boreholes:
+                    LOGGER.debug("borehole_cnt = %d", borehole_cnt)
+
+                if self.param_obj.MAX_BOREHOLES > 0 and borehole_cnt >= self.param_obj.MAX_BOREHOLES:
                     break
+            record_cnt += 1
+            LOGGER.debug('record_cnt = %d', record_cnt)
         LOGGER.debug('_fetch_boreholes_list() returns True')
         return True
