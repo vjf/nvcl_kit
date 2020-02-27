@@ -8,43 +8,66 @@ import sys
 #
 
 
-# Provider list. Format is (WFS service URL, NVCL service URL, bounding box coords)
-prov_list = [ ("http://www.mrt.tas.gov.au:80/web-services/ows", "http://www.mrt.tas.gov.au/NVCLDataServices/", { "west": 143.75, "south": -43.75, "east": 148.75, "north": -39.75 }),
-              ("http://geology.data.vic.gov.au/nvcl/ows", "http://geology.data.vic.gov.au/NVCLDataServices", None),
-              ("https://gs.geoscience.nsw.gov.au/geoserver/ows", "https://nvcl.geoscience.nsw.gov.au/NVCLDataServices", None),
-              ("https://geology.information.qld.gov.au/geoserver/ows", "https://geology.information.qld.gov.au/NVCLDataServices", None),
-              ("http://geology.data.nt.gov.au:80/geoserver/ows", "http://geology.data.nt.gov.au:80/NVCLDataServices", None),
-              ("https://sarigdata.pir.sa.gov.au/geoserver/ows", "https://sarigdata.pir.sa.gov.au/nvcl/NVCLDataServices",None),
-              ("http://geossdi.dmp.wa.gov.au/services/ows",  "http://geossdi.dmp.wa.gov.au/NVCLDataServices", None) ]
+# Provider list. Format is (WFS service URL, NVCL service URL, bounding box coords, local filtering, WFS version, max boreholes))
+prov_list = [ ("http://www.mrt.tas.gov.au:80/web-services/ows", "http://www.mrt.tas.gov.au/NVCLDataServices/", { "west": 143.75, "south": -43.75, "east": 148.75, "north": -39.75 }, False, "1.1.0", 20),
+              ("http://geology.data.vic.gov.au/nvcl/ows", "http://geology.data.vic.gov.au/NVCLDataServices", None, False, "1.1.0", 20),
+              ("https://gs.geoscience.nsw.gov.au/geoserver/ows", "https://nvcl.geoscience.nsw.gov.au/NVCLDataServices", None, False, "1.1.0", 20),
+              ("https://geology.information.qld.gov.au/geoserver/ows", "https://geology.information.qld.gov.au/NVCLDataServices", None, False, "1.1.0", 20),
+              ("http://geology.data.nt.gov.au:80/geoserver/ows", "http://geology.data.nt.gov.au:80/NVCLDataServices", None, True, "2.0.0", 20),
+              ("https://sarigdata.pir.sa.gov.au/geoserver/ows", "https://sarigdata.pir.sa.gov.au/nvcl/NVCLDataServices",None, False, "1.1.0", 20),
+              ("http://geossdi.dmp.wa.gov.au/services/ows",  "http://geossdi.dmp.wa.gov.au/NVCLDataServices", None, False, "2.0.0", 20) ]
 
 
-def do_demo(wfs, nvcl, bbox):
+def do_demo(wfs, nvcl, bbox, local_filt, version, max):
     print("\n\n\n", wfs.upper())
+
+    # Assemble parameters
     param = SimpleNamespace()
+    # NB: If you set this to true then WFS_VERSION must be 2.0.0
+    param.USE_LOCAL_FILTERING = local_filt
     param.WFS_URL = wfs
+    param.WFS_VERSION = version
     param.NVCL_URL = nvcl
     if bbox:
         param.BBOX= bbox
-    param.MAX_BOREHOLES = 20
+    param.MAX_BOREHOLES = max
+
+    # Initialise reader
     reader = NVCLReader(param)
 
+    # Check for failure
     if not reader.wfs:
         print("ERROR!", wfs, nvcl)
 
+    # Get boreholes list
     bh_list = reader.get_boreholes_list()
-    print("bh_list = ", bh_list[:5])
-
-    nvcl_id_list = reader.get_nvcl_id_list()
-    print("nvcl_id_list = ", nvcl_id_list[:5])
+    print("len(bh_list) = ", len(bh_list))
+    print("bh_list[:5] = ", bh_list[:5])
 
     # Get list of NVCL ids
     nvcl_id_list = reader.get_nvcl_id_list()
-    # Get NVCL log id for first borehole in list
+    print("len(nvcl_id_list) = ", len(nvcl_id_list))
+    print("nvcl_id_list[:5] = ", nvcl_id_list[:5])
+
+    # Exit if no nvcl ids found
     if not nvcl_id_list:
         print("!!!! No NVCL ids for", nvcl)
         return
-    nvcl_id = nvcl_id_list[0]
-    imagelog_data_list = reader.get_imagelog_data(nvcl_id)
+
+    # Some nvcl ids do not have any data - find the first which has data
+    imagelog_data_list = []
+    nvcl_id = ""
+    for n_id in nvcl_id_list:
+        imagelog_data_list = reader.get_imagelog_data(n_id)
+        if imagelog_data_list:
+            nvcl_id = n_id
+            break
+
+    # Exit if couldn't find valid data
+    if not imagelog_data_list:
+        print("!!!! No NVCL data for", nvcl)
+        return
+
     for ild in imagelog_data_list[:10]:
         print(ild.log_id,
               ild.log_name,
@@ -205,6 +228,6 @@ def do_demo(wfs, nvcl, bbox):
 if __name__ == "__main__":
 
     # Loop over all the providers
-    for wfs, nvcl, bbox in prov_list:
-        do_demo(wfs, nvcl, bbox)
+    for prov_info in prov_list:
+        do_demo(*prov_info)
 

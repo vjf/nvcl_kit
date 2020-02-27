@@ -260,6 +260,7 @@ class ServiceInterface:
         '''
         enc_params = urllib.parse.urlencode(params).encode('ascii')
         req = urllib.request.Request(url, enc_params)
+        LOGGER.debug("Sending: %s, %s", url, enc_params)
         response_str = b''
         try:
             with urllib.request.urlopen(req, timeout=self.TIMEOUT) as response:
@@ -270,6 +271,7 @@ class ServiceInterface:
         except OSError as os_exc:
             LOGGER.warning('OS Error: %s', str(os_exc))
             return ""
+        LOGGER.debug("Response[:100]: %s", response_str[:100])
         return response_str
 
 

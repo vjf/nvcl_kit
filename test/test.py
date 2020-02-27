@@ -46,7 +46,7 @@ class TestNVCLReader(unittest.TestCase):
                 param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
                 param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
                 rdr = NVCLReader(param_obj, log_lvl=logging.DEBUG)
-                self.assertIn("_fetch_boreholes_list(0)", nvcl_log.output[0])
+                self.assertIn("_fetch_boreholes_list()", nvcl_log.output[0])
 
 
     def try_input_param(self, param_obj, msg):
@@ -254,7 +254,8 @@ class TestNVCLReader(unittest.TestCase):
             self.assertEqual(l, [])
             l = rdr.get_nvcl_id_list()
             self.assertEqual(l, [])
-            wfs_obj.getfeature.return_value.read.assert_called_once()
+            if hasattr(wfs_obj.getfeature.return_value.read, 'assert_called_once'):
+                wfs_obj.getfeature.return_value.read.assert_called_once()
 
 
     @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
