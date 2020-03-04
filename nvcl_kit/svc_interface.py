@@ -39,7 +39,7 @@ class ServiceInterface:
         self.NVCL_URL = nvcl_url
         self.TIMEOUT = timeout
 
-    def get_dataset_collection(self, nvcl_id):
+    def get_dataset_collection(self, nvcl_id, **options):
         ''' Retrieves a dataset for a particular borehole
 
         :param nvcl_id: NVCL 'holeidentifier' parameter, \
@@ -49,6 +49,7 @@ class ServiceInterface:
         '''
         url = self.NVCL_URL + '/getDatasetCollection.html'
         params = {'holeidentifier' : nvcl_id}
+        params.update(options)
         return self._get_response_str(url, params)
 
 
