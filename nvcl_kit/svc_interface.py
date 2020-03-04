@@ -45,6 +45,9 @@ class ServiceInterface:
         :param nvcl_id: NVCL 'holeidentifier' parameter, \
         the 'nvcl_id' from each dict item retrieved from \
         'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :param options: optional parameters: \
+                  headersOnly: only get dataset headers, this is much faster and can be used in combination with holeidentifier=all to get a list of all datasets efficiently, example value=yes
+                  outputformat: change output format from xml, example value=json
         :returns: the response as a byte string or an empty string upon error
         '''
         url = self.NVCL_URL + '/getDatasetCollection.html'
