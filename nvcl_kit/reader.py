@@ -270,6 +270,19 @@ class NVCLReader:
         return depth_dict
 
 
+    def _clean_xml_parse(self, xml_str):
+        ''' Filters out badly-formatted XML
+
+        :param xml_str: XML string to parse
+        :returns: XML ElementTree Element object, it will be empty if there was an error
+        '''
+        try:
+            root = ET.fromstring(xml_str)
+        except ET.ParseError:
+            return ET.Element('')
+        return root
+
+
     def get_datasetid_list(self, nvcl_id):
         ''' Retrieves a list of dataset ids
         :param nvcl_id: NVCL 'holeidentifier' parameter, the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
@@ -278,7 +291,7 @@ class NVCLReader:
         response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         datasetid_list = []
         for child in root.findall('./Dataset'):
             dataset_id = child.findtext('./DatasetID', default=None)
@@ -295,7 +308,7 @@ class NVCLReader:
         response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         dataset_list = []
         for child in root.findall('./Dataset'):
             # Compulsory
@@ -373,7 +386,7 @@ class NVCLReader:
         response_str = self.svc.get_log_collection(dataset_id, True)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         dataset_list = []
         for child in root.findall('./Log'):
             log_id = child.findtext('./LogID', default=None)
@@ -435,7 +448,7 @@ class NVCLReader:
         response_str = self.svc.get_image_tray_depth(log_id)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         image_tray_list = []
         for child in root.findall('./ImageTray'):
             sample_no = child.findtext('./SampleNo', default=None)
@@ -459,7 +472,7 @@ class NVCLReader:
         response_str = self.svc.get_log_collection(dataset_id)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         log_list = []
         for child in root.findall('./Log'):
             log_id = child.findtext('./LogID', default=None)
@@ -562,7 +575,7 @@ class NVCLReader:
         response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         logid_list = []
         for child in root.findall('./*/Logs/Log'):
             is_public = child.findtext('./ispublic', default='false')
@@ -588,7 +601,7 @@ class NVCLReader:
         response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         logid_list = []
         for child in root.findall('./*/SpectralLogs/SpectralLog'):
             log_id = child.findtext('./logID', default='')
@@ -627,7 +640,7 @@ class NVCLReader:
         response_str = self.svc.get_dataset_collection(nvcl_id)
         if not response_str:
             return []
-        root = ET.fromstring(response_str)
+        root = self._clean_xml_parse(response_str)
         logid_list = []
         for child in root.findall('./*/ProfilometerLogs/ProfLog'):
             log_id = child.findtext('./logID', default='')
@@ -675,6 +688,21 @@ class NVCLReader:
         return [bh['nvcl_id'] for bh in self.borehole_list]
 
 
+    def _clean_wfs_resp(self, getfeat_params):
+        '''
+        Fetches WFS response from owslib and make sure it returns a string
+
+        :param getfeat_params: dict of parameters for WFS GetFeature request
+        :return: byte string response
+        '''
+        response = self.wfs.getfeature(**getfeat_params).read()
+        if not type(response) in [bytes, str]:
+            response_str = b""
+        else:
+            response_str = bytes(response, encoding='ascii')
+        return response_str
+
+
     def _wfs_getfeature(self):
         response_str = b''
         bhv_list = []
@@ -692,14 +720,14 @@ class NVCLReader:
                 getfeat_params = { 'typename': 'gsmlp:BoreholeView', 'filter': filterxml }
                 if self.param_obj.WFS_VERSION != '2.0.0':
                     getfeat_params['srsname'] = self.param_obj.BOREHOLE_CRS
-                response = self.wfs.getfeature(**getfeat_params)
-                response_str = bytes(response.read(), encoding='ascii')
+                response_str = self._clean_wfs_resp(getfeat_params)
             except (RequestException, HTTPException, ServiceException, OSError) as exc:
                 LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
                 return bhv_list
-            root = ET.fromstring(response_str)
+            root = self._clean_xml_parse(response_str)
             return root.findall('./*/gsmlp:BoreholeView', NS)
 
+        # Using local filtering, only supported in WFS v2.0.0
         elif self.param_obj.WFS_VERSION == "2.0.0":
             RECORD_INC = 10000
             record_cnt = 0
@@ -712,14 +740,13 @@ class NVCLReader:
                                        'startindex': record_cnt}
                     # SRS name is not a parameter in v2.0.0
                     LOGGER.debug('_wfs_getfeature(): getfeat_params = %s', repr(getfeat_params))
-                    response = self.wfs.getfeature(**getfeat_params)
-                    resp_s = bytes(response.read(), encoding='ascii')
+                    resp_s = self._clean_wfs_resp(getfeat_params)
                     LOGGER.debug('_wfs_getfeature(): resp_s = %s', resp_s)
                 except (RequestException, HTTPException, ServiceException, OSError) as exc:
                     LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
                     return bhv_list
                 record_cnt += RECORD_INC
-                root = ET.fromstring(resp_s)
+                root = self._clean_xml_parse(resp_s)
                 bhv_list += [ x for x in root.findall('./*/gsmlp:BoreholeView', NS)]
                 num_ret = root.attrib.get('numberReturned', '0')
                 LOGGER.debug('_wfs_getfeature(): num_ret = %s',  num_ret)
