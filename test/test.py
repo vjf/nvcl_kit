@@ -240,6 +240,25 @@ class TestNVCLReader(unittest.TestCase):
 
 
     @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
+    def test_none_wfs(self, mock_wfs):
+        ''' Test that it does not crash upon 'None' response
+            (tests get_boreholes_list() & get_nvcl_id_list() )
+        '''
+        wfs_obj = mock_wfs.return_value
+        wfs_obj.getfeature.return_value = Mock()
+        wfs_obj.getfeature.return_value.read.return_value = None
+        param_obj = self.setup_param_obj(max_boreholes=MAX_BOREHOLES)
+        rdr = NVCLReader(param_obj)
+        l = rdr.get_boreholes_list()
+        self.assertEqual(l, [])
+        l = rdr.get_nvcl_id_list()
+        self.assertEqual(l, [])
+        # Check that read() is called once only
+        if hasattr(wfs_obj.getfeature.return_value.read, 'assert_called_once'):
+            wfs_obj.getfeature.return_value.read.assert_called_once()
+
+
+    @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_empty_wfs(self, mock_wfs):
         ''' Test empty but valid WFS response
             (tests get_boreholes_list() & get_nvcl_id_list() )
@@ -254,6 +273,7 @@ class TestNVCLReader(unittest.TestCase):
             self.assertEqual(l, [])
             l = rdr.get_nvcl_id_list()
             self.assertEqual(l, [])
+            # Check that read() is called once only
             if hasattr(wfs_obj.getfeature.return_value.read, 'assert_called_once'):
                 wfs_obj.getfeature.return_value.read.assert_called_once()
 
