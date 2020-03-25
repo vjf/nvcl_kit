@@ -241,21 +241,25 @@ class TestNVCLReader(unittest.TestCase):
 
     @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)
     def test_none_wfs(self, mock_wfs):
-        ''' Test that it does not crash upon 'None' response
+        ''' Test that it does not crash upon 'None', empty string, non-ascii byte string responses
             (tests get_boreholes_list() & get_nvcl_id_list() )
         '''
-        wfs_obj = mock_wfs.return_value
-        wfs_obj.getfeature.return_value = Mock()
-        wfs_obj.getfeature.return_value.read.return_value = None
-        param_obj = self.setup_param_obj(max_boreholes=MAX_BOREHOLES)
-        rdr = NVCLReader(param_obj)
-        l = rdr.get_boreholes_list()
-        self.assertEqual(l, [])
-        l = rdr.get_nvcl_id_list()
-        self.assertEqual(l, [])
-        # Check that read() is called once only
-        if hasattr(wfs_obj.getfeature.return_value.read, 'assert_called_once'):
-            wfs_obj.getfeature.return_value.read.assert_called_once()
+        bad_byte_str = b'\xff\xff\xff'
+        byte_str = b'Test String \xf0\x9f\x98\x80'
+        utf_str = byte_str.decode('utf-8')
+        for resp in [None, b"", "", byte_str, bad_byte_str, utf_str, []]:
+            wfs_obj = mock_wfs.return_value
+            wfs_obj.getfeature.return_value = Mock()
+            wfs_obj.getfeature.return_value.read.return_value = resp
+            param_obj = self.setup_param_obj(max_boreholes=MAX_BOREHOLES)
+            rdr = NVCLReader(param_obj)
+            l = rdr.get_boreholes_list()
+            self.assertEqual(l, [])
+            l = rdr.get_nvcl_id_list()
+            self.assertEqual(l, [])
+            # Check that read() is called once only
+            if hasattr(wfs_obj.getfeature.return_value.read, 'assert_called_once'):
+                wfs_obj.getfeature.return_value.read.assert_called_once()
 
 
     @unittest.mock.patch('nvcl_kit.reader.WebFeatureService', autospec=True)

@@ -690,7 +690,7 @@ class NVCLReader:
 
     def _clean_wfs_resp(self, getfeat_params):
         '''
-        Fetches WFS response from owslib and make sure it returns a string
+        Fetches WFS response from owslib and make sure it returns a byte string
 
         :param getfeat_params: dict of parameters for WFS GetFeature request
         :return: byte string response
@@ -698,8 +698,10 @@ class NVCLReader:
         response = self.wfs.getfeature(**getfeat_params).read()
         if not type(response) in [bytes, str]:
             response_str = b""
+        elif type(response) == bytes:
+            response_str = response
         else:
-            response_str = bytes(response, encoding='ascii')
+            response_str = response.encode('utf-8', 'ignore')
         return response_str
 
 
