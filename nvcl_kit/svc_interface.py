@@ -1,3 +1,7 @@
+"""
+This forms the interface between the 'reader' class and the low-level web APIs.
+
+"""
 import urllib
 import urllib.parse
 import urllib.request
@@ -5,7 +9,7 @@ from http.client import HTTPException
 import sys, logging
 
 LOG_LVL = logging.INFO
-''' Initialise debug level
+''' Initialise debug level, set to 'logging.INFO' or 'logging.DEBUG'
 '''
 
 # Set up debugging
@@ -29,6 +33,8 @@ if not LOGGER.hasHandlers():
 
 class ServiceInterface:
     ''' Call the web APIs for NVCL services
+
+        NB: 'ServiceInterface' should only be called from within the 'reader' class.
     '''
 
     def __init__(self, nvcl_url, timeout):
@@ -42,12 +48,13 @@ class ServiceInterface:
     def get_dataset_collection(self, nvcl_id, **options):
         ''' Retrieves a dataset for a particular borehole
 
-        :param nvcl_id: NVCL 'holeidentifier' parameter, \
-        the 'nvcl_id' from each dict item retrieved from \
-        'get_boreholes_list()' or 'get_nvcl_id_list()'
-        :param options: optional parameters: \
-                  headersOnly: only get dataset headers, this is much faster and can be used in combination with holeidentifier=all to get a list of all datasets efficiently, example value=yes
-                  outputformat: change output format from xml, example value=json
+        :param nvcl_id: NVCL 'holeidentifier' parameter, the 'nvcl_id' from each dict item retrieved from
+                  'get_boreholes_list()' or 'get_nvcl_id_list()'
+        :param options: optional parameters: 
+
+            * headersOnly: only get dataset headers, this is much faster and can be used in combination with holeidentifier=all to get a list of all datasets efficiently, example value=yes
+            * outputformat: change output format from xml, example value=json
+
         :returns: the response as a byte string or an empty string upon error
         '''
         url = self.NVCL_URL + '/getDatasetCollection.html'
@@ -60,10 +67,11 @@ class ServiceInterface:
         ''' Retrieves images of NVCL core trays
 
         :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
-        :param options: optional parameters: \
-                 width: number of column the images are to be displayed, default value=3
-                 startsampleno: the first sample image to be displayed, default value=0
-                 endsampleno: the last sample image to be displayed, default value=99999
+        :param options: optional parameters:
+
+             * width: number of column the images are to be displayed, default value=3
+             * startsampleno: the first sample image to be displayed, default value=0
+             * endsampleno: the last sample image to be displayed, default value=99999
         '''
         url = self.NVCL_URL + '/mosaic.html'
         params = {'logid' : log_id}
@@ -76,10 +84,11 @@ class ServiceInterface:
 
         :param dataset_id: obtained through calling the getDatasetCollection service
         :param logid: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes, with LogName equal Tray Thumbnail Images
-        :param options: optional parameters: \
-                  width: specify the number of column the images are to be displayed, default value=3
-                  startsampleno: the first sample image to be displayed, default value=0
-                  endsampleno: the last sample image to be displayed, default value=99999
+        :param options: optional parameters:
+
+              * width: specify the number of column the images are to be displayed, default value=3
+              * startsampleno: the first sample image to be displayed, default value=0
+              * endsampleno: the last sample image to be displayed, default value=99999
         '''
         url = self.NVCL_URL + '/mosaictraythumbnail.html'
         params = {'datasetid': dataset_id, 'logid' : log_id}
@@ -99,8 +108,7 @@ class ServiceInterface:
 
 
     def get_image_tray_depth(self, log_id):
-        ''' Generates a list of image tray collection with start and end depth
-            values for each image tray.
+        ''' Generates a list of image tray collection with start and end depth values for each image tray.
 
         :param logid: obtained through calling the getLogCollection service with mosaicsvc set to yes, select the LogId with LogName equal Tray Thumbnail Images or Tray Images
         '''
@@ -110,18 +118,18 @@ class ServiceInterface:
 
 
     def get_plot_scalar(self, log_id, **options):
-        ''' Uses JFeeChart Java chart library to draw a plot of the product and
-            return the plot as an image in PNG format.
+        ''' Uses JFeeChart Java chart library to draw a plot of the product and return the plot as an image in PNG format.
 
         :param log_id: obtained through calling the getLogCollection service with mosaicsvc URL parameter set to 'no'
         :param options: a dict of options:
-               startdepth: the start depth of a borehole collar, defaultvalue = 0
-               enddepth: the end depth of a borehole collar, default value=99999
-               samplinginterval: the interval of the sampling, default value=1
-               width: the width of the image in pixel, default value=300
-               height: the height of the image in pixel, default value=600
-               graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
-               legend: value= 1 or 0, 1 - indicates to show the legend, 0 to hide it, optional, default to 1
+
+               * startdepth: the start depth of a borehole collar, defaultvalue = 0
+               * enddepth: the end depth of a borehole collar, default value=99999
+               * samplinginterval: the interval of the sampling, default value=1
+               * width: the width of the image in pixel, default value=300
+               * height: the height of the image in pixel, default value=600
+               * graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+               * legend: value= 1 or 0, 1 - indicates to show the legend, 0 to hide it, optional, default to 1
         '''
         url = self.NVCL_URL + '/plotscalar.html'
         params = {'logid' : log_id}
@@ -136,13 +144,14 @@ class ServiceInterface:
              service, with mosaicsvc URL parameter set to 'no' and up to 6
              logid parameters are allowed
         :param options: optional parameters:
-                startdepth: the start depth of a borehole collar, default value=0
-                enddepth: the end depth of a borehole collar, default value=99999
-                samplinginterval: the interval of the sampling, default value=1
-                width: the width of the image in pixel, default value=300
-                height: the height of the image in pixel, default value=600
-                graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
-                legend: value=yes or no, if yes - indicate to show the legend, default to yes
+
+               * startdepth: the start depth of a borehole collar, default value=0
+               * enddepth: the end depth of a borehole collar, default value=99999
+               * samplinginterval: the interval of the sampling, default value=1
+               * width: the width of the image in pixel, default value=300
+               * height: the height of the image in pixel, default value=600
+               * graphtype: an integer range from 1 to 3, 1=Stacked Bar Chart, 2=Scattered Chart, 3=Line Chart, default value=1
+               * legend: value=yes or no, if yes - indicate to show the legend, default to yes
         '''
         url = self.NVCL_URL + '/plotmultiscalars.html'
         if not log_id_list:
@@ -167,12 +176,12 @@ class ServiceInterface:
 
         :param email: user's email address to identify the user
         :param dataset_id: GUID dataset identifier of the dataset to be prepared (list of datasetid can be obtained through calling the NVCL Data Services getDatasetCollection service)
-        :param options: optional parameters: \
-            linescan: Prepare linescan imagery with this dataset. Setting this 
+        :param options: optional parameters:
+
+            * linescan: Prepare linescan imagery with this dataset. Setting this 
               to 'no' will reduce the size of the download significantly but
-              users will not be able to see the highest resolution images.
-              Default value=yes
-            forcerecreate: Force the service to delete the cached version of
+              users will not be able to see the highest resolution images.  Default value=yes
+            * forcerecreate: Force the service to delete the cached version of
               this dataset and recreate it. Use this if there is a problem with
               the dataset or cached version is stale. Default value=no
         '''
@@ -183,9 +192,7 @@ class ServiceInterface:
 
 
     def get_download_tsg_status(self, email):
-        ''' This service displays the status of past TSG file download requests
-            for users. This service takes a single parameter which is the email
-            address of the user.
+        ''' This service displays the status of past TSG file download requests for users. This service takes a single parameter which is the email address of the user.
 
         :param email: user's email address to identify the user
         '''
@@ -194,15 +201,15 @@ class ServiceInterface:
 
 
     def download_wfs(self, email, borehole_id, options):
-        ''' The WFS Download Service will prepare xml datasets from NVCL
-            GeoServer instances and make them available for download.
+        ''' The WFS Download Service will prepare xml datasets from NVCL GeoServer instances and make them available for download.
 
         :param email: user's email address to identify the user
         :param borehole_id: gml feature identifier of the dataset to be prepared
-        :param options: dictionary of optional parameters: \
-            typename: the type name of the gml feature to prepare; default value
+        :param options: dictionary of optional parameters:
+
+            * typename: the type name of the gml feature to prepare; default value
               is 'sa:SamplingFeatureCollection'.
-            forcerecreate: Force the Service to delete the cached version of
+            * forcerecreate: Force the Service to delete the cached version of
               this dataset and recreate it. Use this if there is a problem with
               the dataset or cached version is stale; default value=no
         '''
@@ -242,11 +249,12 @@ class ServiceInterface:
         ''' Returns data in downsampled format, to a certain height resolution
 
         :param log_id: obtained through calling the getLogCollection service with URL parameter mosaicsvc=yes
-        :param options: dictionary of optional parameters
-            outputformat: string 'csv' or 'json'
-            startdepth: start of depth range, in metres from borehole collar
-            enddepth: end of depth range, in metres from borehole collar
-            interval: size of interval to bin or average over
+        :param options: dictionary of optional parameters:
+
+            * outputformat: string 'csv' or 'json'
+            * startdepth: start of depth range, in metres from borehole collar
+            * enddepth: end of depth range, in metres from borehole collar
+            * interval: size of interval to bin or average over
         '''
         url = self.NVCL_URL + '/getDownsampledData.html'
         params = {'logid' : log_id}
@@ -255,8 +263,7 @@ class ServiceInterface:
 
 
     def _get_response_str(self, url, params):
-        ''' Performs a GET request with URL and parameters and returns the
-            response as a string
+        ''' Performs a GET request with URL and parameters and returns the response as a string
 
         :param url: URL of request, string
         :param params: parameters, in dictionary form
@@ -281,7 +288,7 @@ class ServiceInterface:
 
     def _make_multi_logids(self, log_id_list, options={}):
         ''' Converts a list of log ids to a logids for a HTTP GET request
-            e.g. ['XX','YY','ZZ'] converts to 'logid=XX&logid=YY&logid=ZZ'
+              e.g. ['XX','YY','ZZ'] converts to 'logid=XX&logid=YY&logid=ZZ'
 
         :param log_id_list: log id list to be converted
         :returns: logid GET request string
