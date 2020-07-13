@@ -17,7 +17,7 @@ cache:
 
 before_script:
   - python -V  # Print out python version for debugging
-  - pip install virtualenv
+  - pip3 install virtualenv
   - virtualenv venv
   - source venv/bin/activate
 
@@ -30,13 +30,13 @@ stages:
 test:
   stage: Test
   script:
-    - pip install tox
+    - pip3 install tox
     - tox
 
 build:
   stage: Build
   script:
-    - python setup.py bdist_wheel
+    - python3 setup.py bdist_wheel
     # run the command here
   artifacts:
     paths:
@@ -45,7 +45,7 @@ build:
 documentation:
   stage: Documentation
   script:
-    - pip install sphinx sphinx-rtd-theme owslib
+    - pip3 install sphinx sphinx-rtd-theme owslib
     - cd doc ; make html
     - mv _build/html/ ../public/
   artifacts:
@@ -57,9 +57,9 @@ documentation:
 deploy:
   stage: Deploy
   script:
-    - pip install twine
+    - pip3 install twine
     - echo "$PYPI_CONFIG" > "/root/.pypirc"
-    - python setup.py sdist bdist_wheel
+    - python3 setup.py sdist bdist_wheel
     - twine upload --repository nexus dist/*.whl
     - twine upload --repository pypi dist/*
   only:
