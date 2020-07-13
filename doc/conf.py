@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.pardir, os.pardir, 'nvcl_kit'
 # -- Project information -----------------------------------------------------
 
 project = 'nvcl_kit'
-copyright = 'AuScope, CSIRO 2019'
+copyright = 'AuScope, CSIRO 2020'
 author = 'Vincent Fazio'
 
 
@@ -50,4 +50,4 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
