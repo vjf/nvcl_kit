@@ -4,9 +4,11 @@
 [![coverage report](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/badges/master/coverage.svg)](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/commits/master)
 
 
-#### Brief Introduction: How to extract NVCL borehole data
+1. **An introduction is below**
+2. **There is a rough demonstration script [here](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/-/blob/master/demo.py)**
+3. **API documentation can be found [here](https://csiro-geoanalytics.gitlab.io/python-shared/nvcl_kit)**
 
-*NB: There is also a rough demonstration script: 'demo.py'*
+## How to extract NVCL borehole data
 
 **1. Instantiate class**
 
