@@ -15,15 +15,16 @@ prov_list = [ ("http://www.mrt.tas.gov.au:80/web-services/ows", "http://www.mrt.
               ("https://geology.information.qld.gov.au/geoserver/ows", "https://geology.information.qld.gov.au/NVCLDataServices", None, False, "1.1.0", 20),
               ("http://geology.data.nt.gov.au:80/geoserver/ows", "http://geology.data.nt.gov.au:80/NVCLDataServices", None, True, "2.0.0", 20),
               ("https://sarigdata.pir.sa.gov.au/geoserver/ows", "https://sarigdata.pir.sa.gov.au/nvcl/NVCLDataServices",None, False, "1.1.0", 20),
+              # NB: Western Australia's DMIRS only supports WFS v2.0.0
               ("http://geossdi.dmp.wa.gov.au/services/ows",  "http://geossdi.dmp.wa.gov.au/NVCLDataServices", None, False, "2.0.0", 20) ]
 
 
 def do_demo(wfs, nvcl, bbox, local_filt, version, max):
-    print("\n\n\n", wfs.upper())
+    print("\n\n***", wfs, "***\n")
 
     # Assemble parameters
     param = SimpleNamespace()
-    # NB: If you set this to true then WFS_VERSION must be 2.0.0
+    # NB: If you set USE_LOCAL_FILTERING to true then WFS_VERSION must be 2.0.0
     param.USE_LOCAL_FILTERING = local_filt
     param.WFS_URL = wfs
     param.WFS_VERSION = version
