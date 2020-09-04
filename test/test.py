@@ -16,10 +16,13 @@ MAX_BOREHOLES = 20
 class TestNVCLReader(unittest.TestCase):
 
 
-    def setup_param_obj(self, max_boreholes=None, bbox=None):
+    def setup_param_obj(self, max_boreholes=None, bbox=None, polygon=None, depths=None):
         ''' Create a parameter object for passing to NVCLReader constructor
  
         :param max_boreholes: maximum number of boreholes to download
+        :param bbox: bounding box used to limit boreholes
+        :param polygon: polygon used to limit boreholes
+        :param depths: only retrieve data within this depth range
         :returns: SimpleNamespace() object containing parameters
         '''
         param_obj = SimpleNamespace()
@@ -27,6 +30,10 @@ class TestNVCLReader(unittest.TestCase):
         param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
         if bbox:
             param_obj.BBOX = bbox
+        if depths:
+            param_obj.DEPTHS = depths
+        if polygon:
+            param_obj.POLYGON = polygon
         if max_boreholes:
             param_obj.MAX_BOREHOLES = max_boreholes
         return param_obj
@@ -144,7 +151,16 @@ class TestNVCLReader(unittest.TestCase):
         param_obj.BBOX = { 'south': '-40', 'north': 0, 'west': 90, 'east':180 }
         self.try_input_param(param_obj, "BBOX['south'] parameter is not a number")
 
-
+    def test_bad_polygon_param(self):
+        ''' Tests if 'POLYGON' parameter is not assigned properly, it issues a
+            warning message and returns wfs attribute as None
+        '''
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        param_obj.POLYGON = []
+        self.try_input_param(param_obj,"'POLYGON' parameter is not a shapely.geometry.polygon.LinearRing")
+ 
     def test_missing_wfs_param(self):
         ''' Tests that if it is missing 'WFS_URL' parameter it issues a
             warning message and returns wfs attribute as None
