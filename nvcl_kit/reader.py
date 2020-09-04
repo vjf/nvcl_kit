@@ -1,5 +1,5 @@
 """
-# This module is the main interface used to NVCL borehole data from the NVCL services..
+This module is the main interface used to NVCL borehole data from the NVCL services..
 """
 
 import sys
@@ -18,6 +18,8 @@ from owslib.fes import PropertyIsLike, etree
 from owslib.util import ServiceException
 
 from http.client import HTTPException
+
+from shapely.geometry.polygon import LinearRing
 
 from nvcl_kit.svc_interface import ServiceInterface
 
@@ -82,6 +84,14 @@ TIMEOUT = 6000
 ''' Timeout for querying WFS and NVCL services (seconds)
 '''
 
+MAX_DEPTH = 10000.0
+''' Default maximum depth to search for boreholes
+'''
+
+MIN_DEPTH = 0.0
+''' Default minimum depth to search for boreholes
+'''
+
 
 def bgr2rgba(bgr):
     ''' Converts BGR colour integer into an RGB tuple
@@ -105,16 +115,22 @@ class NVCLReader:
             * WFS_URL - URL of WFS service, GeoSciML V4.1 BoreholeView
             * WFS_VERSION - (optional - default "1.1.0")
             * BOREHOLE_CRS - (optional - default "EPSG:4326")
-            * BBOX - (optional - default {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}) bounding box in EPSG:4326, only boreholes within box are retrieved
+            * DEPTHS - (optional) Tuple of range of depths (min,max) [metres]
+            * POLYGON - (optional) 2D 'shapely.geometry.LinearRing' object, only boreholes within this ring are retrieved
+            * BBOX - (optional - default {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}) 2D bounding box in EPSG:4326, only boreholes within box are retrieved
             * MAX_BOREHOLES - (optional - default 0) Maximum number of boreholes to retrieve. If < 1 then all boreholes are loaded
 
           ::
 
               e.g.
               from types import SimpleNamespace
+              from shapely.geometry.polygon import LinearRing
               param_obj = SimpleNamespace()
               # Uses EPSG:4326
               param_obj.BBOX = { "west": 132.76, "south": -28.44, "east": 134.39, "north": -26.87 }
+              # Or use a POLYGON instead of a BBOX
+              param_obj.POLYGON = LinearRing([(132.76, -28.44), (132.76, -26.87), (134.39, -26.87), (134.39, -28.44), (132.76, -28.44)])
+              param_obj.DEPTHS = (100.0, 900.0)
               param_obj.WFS_URL = "http://blah.blah.blah/geoserver/wfs"
               param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
               param_obj.MAX_BOREHOLES = 20
@@ -138,13 +154,18 @@ class NVCLReader:
             return
         self.param_obj = param_obj
 
-        # If BBOX not defined, use default
-        if not hasattr(self.param_obj, 'BBOX'):
-            self.param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
-        else:
+        # Check POLYGON value
+        if hasattr(self.param_obj, 'POLYGON'):
+            if not isinstance(self.param_obj.POLYGON, LinearRing):
+                LOGGER.warning("'POLYGON' parameter is not a shapely.geometry.polygon.LinearRing")
+                return
+
+        # Check BBOX value
+        elif hasattr(self.param_obj, 'BBOX'):
             if not isinstance(self.param_obj.BBOX, dict):
                 LOGGER.warning("'BBOX' parameter is not a dict")
                 return
+
             # Check BBOX dict values
             for dir in ["west", "south", "east", "north"]:
                 if dir not in self.param_obj.BBOX:
@@ -154,6 +175,30 @@ class NVCLReader:
                    not isinstance(self.param_obj.BBOX[dir], int):
                     LOGGER.warning("BBOX['%s'] parameter is not a number", dir)
                     return
+        else:
+            # If neither BBOX nor POLYGON is defined, use default BBOX
+            self.param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
+
+        # Check DEPTHS parameter
+        if hasattr(self.param_obj, "DEPTHS"):
+            depths = self.param_obj.DEPTHS
+            if not isinstance(depths, tuple):
+                LOGGER.warning("'DEPTHS' parameter is not a tuple")
+                return
+            if len(depths) != 2:
+                LOGGER.warning("'DEPTHS' parameter does not have length of 2")
+                return
+            if type(depth[0]) not in [int, float] or type(depth[1]) not in [int, float]:
+                LOGGER.warning("'DEPTHS' parameter does not contain numerics")
+                return
+            if depths[0] >= depths[1]:
+                LOGGER.warning("'DEPTHS' parameter minimum is not less then maximum")
+                return
+            self.min_depth = depths[0]
+            self.max_depth = depths[1]
+        else:
+            self.min_depth = MIN_DEPTH
+            self.max_depth = MAX_DEPTH
 
         # Check WFS_URL value
         if not hasattr(self.param_obj, 'WFS_URL'):
@@ -236,7 +281,7 @@ class NVCLReader:
         # Send HTTP request, get response
         json_data = self.svc.get_downsampled_data(log_id,
             interval=height_resol, outputformat='json',
-            startdepth=0.0, enddepth=10000.0)
+            startdepth=self.min_depth, enddepth=self.max_depth)
         if not json_data:
             LOGGER.debug("get_borehole_data() json_data= %s", repr(json_data))
             return OrderedDict()
@@ -853,8 +898,16 @@ class NVCLReader:
                 LOGGER.debug('%s > %s, %s < %s', self.param_obj.BBOX['north'], borehole_dict['y'],
                                                  self.param_obj.BBOX['south'], borehole_dict['y'])
 
-                # Only accept if within bounding box
-                if self.param_obj.BBOX['west'] < borehole_dict['x'] and \
+                # If POLYGON is set, only accept if within linear ring
+                if hasattr(self.param_obj, 'POLYGON'):
+                    point = Point(borehole_dict['x'], borehole_dict['y'])
+                    if point.within(self.param_obj.POLYGON):
+                        borehole_cnt += 1
+                        self.borehole_list.append(borehole_dict)
+                        LOGGER.debug("borehole_cnt = %d", borehole_cnt)
+
+                # Else only accept if within bounding box
+                elif self.param_obj.BBOX['west'] < borehole_dict['x'] and \
                    self.param_obj.BBOX['east'] > borehole_dict['x'] and \
                    self.param_obj.BBOX['north'] > borehole_dict['y'] and \
                    self.param_obj.BBOX['south'] < borehole_dict['y']:

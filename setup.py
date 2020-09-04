@@ -33,7 +33,7 @@ setup_info = dict(
     ],
     packages=setuptools.find_packages(),
     python_requires='>=3.5',
-    install_requires=['OWSLib']
+    install_requires=['OWSLib','shapely']
 )
 
 
