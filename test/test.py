@@ -348,8 +348,8 @@ class TestNVCLReader(unittest.TestCase):
                 'boreholeLength_m': '60.3',
                 'elevation_m': '791.4',
                 'elevation_srs': 'http://www.opengis.net/def/crs/EPSG/0/5711',
-                'positionalAccuracy': '1.2',
-                'source': 'Src',
+		'positionalAccuracy': '1.2',
+		'source': 'Src',
                 'parentBorehole_uri': 'http://blah.org/blah-d354454546e3esd3454',
                 'metadata_uri': 'http://blah.org/geosciml-drillhole-locations-in-blah-d354a70a4a29536166ab8a9ca6470a79d628c05e',
                 'genericSymbolizer': 'SSSSS',
@@ -413,6 +413,13 @@ class TestNVCLReader(unittest.TestCase):
 
 
     def setup_urlopen(self, fn, params, src_file):
+        ''' Patches over 'urlopen()' call and calls a function with parameters
+
+        :param fn: function to call
+        :param params: function's parameters as a dict
+        :param src_file: filename of a file containing data returned from patched 'urlopen()'
+        :returns: data returned from function call
+        '''
         rdr = self.setup_reader()
         ret_list = []
         with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
@@ -438,6 +445,7 @@ class TestNVCLReader(unittest.TestCase):
     def urllib_exception_tester(self, exc, fn, msg, params):
         ''' Creates an exception in urllib.request.urlopen() read() and
             tests for the correct warning message
+
         :param exc: exception that is to be created
         :param fn: NVCLReader function to be tested
         :param msg: warning message to test for
@@ -636,13 +644,59 @@ class TestNVCLReader(unittest.TestCase):
         '''
         bh_data_list = self.setup_urlopen('get_borehole_data', {'log_id':"dummy-id", 'height_resol':10.0, 'class_name':"dummy-class"}, 'bh_data.txt')
         self.assertEqual(len(bh_data_list), 28)
+        self.assertEqual(isinstance(bh_data_list[5.0], SimpleNamespace), True)
+
         self.assertEqual(bh_data_list[5.0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[5.0].classText, 'WHITE-MICA')
-        self.assertEqual(bh_data_list[5.0].colour, (1.0, 1.0, 0.0, 1.0))
+        self.assertEqual(bh_data_list[5.0].classText, 'KAOLIN')
+        self.assertEqual(bh_data_list[5.0].colour, (1.0, 0.0, 0.0, 1.0))
 
         self.assertEqual(bh_data_list[275.0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[275.0].classText, 'WHITE-MICA')
-        self.assertEqual(bh_data_list[275.0].colour, (1.0, 1.0, 0.0, 1.0))
+        self.assertEqual(bh_data_list[275.0].classText, 'CARBONATE')
+        self.assertEqual(bh_data_list[275.0].colour, (0.0, 0.0, 1.0, 1.0))
+
+
+    def test_borehole_data_top_n(self):
+        ''' Test get_borehole_data() with top_n parameter
+        '''
+        top_n = 2
+        bh_data_list = self.setup_urlopen('get_borehole_data', {'log_id':"dummy-id", 'height_resol':10.0, 'class_name':"dummy-class", 'top_n': top_n}, 'bh_data.txt')
+        self.assertEqual(len(bh_data_list), 28)
+        self.assertEqual(len(bh_data_list[5.0]), top_n)
+        self.assertEqual(isinstance(bh_data_list[5.0], list), True)
+
+        self.assertEqual(bh_data_list[5.0][0].className, 'dummy-class')
+        self.assertEqual(bh_data_list[5.0][0].classText, 'KAOLIN')
+        self.assertEqual(bh_data_list[5.0][0].colour, (1.0, 0.0, 0.0, 1.0))
+
+        self.assertEqual(bh_data_list[5.0][1].className, 'dummy-class')
+        self.assertEqual(bh_data_list[5.0][1].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[5.0][1].colour, (1.0, 1.0, 0.0, 1.0))
+
+        self.assertEqual(len(bh_data_list[275.0]), top_n)
+
+        self.assertEqual(bh_data_list[275.0][0].className, 'dummy-class')
+        self.assertEqual(bh_data_list[275.0][0].classText, 'CARBONATE')
+        self.assertEqual(bh_data_list[275.0][0].colour, (0.0, 0.0, 1.0, 1.0))
+
+        self.assertEqual(bh_data_list[275.0][1].className, 'dummy-class')
+        self.assertEqual(bh_data_list[275.0][1].classText, 'CHLORITE')
+        self.assertEqual(bh_data_list[275.0][1].colour, (0.0, 1.0, 0.0, 1.0))
+
+    def test_borehole_data_top_n_error(self):
+        ''' Test get_borehole_data() with top_n parameter as a negative number
+        '''
+        top_n = -10
+        bh_data_list = self.setup_urlopen('get_borehole_data', {'log_id':"dummy-id", 'height_resol':10.0, 'class_name':"dummy-class", 'top_n': top_n}, 'bh_data.txt')
+        self.assertEqual(len(bh_data_list), 28)
+        self.assertEqual(isinstance(bh_data_list[5.0], SimpleNamespace), True)
+
+        self.assertEqual(bh_data_list[5.0].className, 'dummy-class')
+        self.assertEqual(bh_data_list[5.0].classText, 'KAOLIN')
+        self.assertEqual(bh_data_list[5.0].colour, (1.0, 0.0, 0.0, 1.0))
+
+        self.assertEqual(bh_data_list[275.0].className, 'dummy-class')
+        self.assertEqual(bh_data_list[275.0].classText, 'CARBONATE')
+        self.assertEqual(bh_data_list[275.0].colour, (0.0, 0.0, 1.0, 1.0))
 
 
     def test_borehole_exception(self):
