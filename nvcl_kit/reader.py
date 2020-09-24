@@ -269,15 +269,21 @@ class NVCLReader:
         self.svc = ServiceInterface(self.param_obj.NVCL_URL, TIMEOUT)
 
 
-    def get_borehole_data(self, log_id, height_resol, class_name):
+    def get_borehole_data(self, log_id, height_resol, class_name, top_n=1):
         ''' Retrieves borehole mineral data for a borehole
 
         :param log_id: borehole log identifier, string e.g. 'ce2df1aa-d3e7-4c37-97d5-5115fc3c33d' This is the first id from the list of triplets [log id, log type, log name] fetched from 'get_imagelog_data()'
         :param height_resol: height resolution, float
         :param class_name: name of mineral class
-        :returns: dict: key - depth, float; value - SimpleNamespace( 'colour'= RGBA float tuple, 'className'= class name, 'classText'= mineral name )
+        :param top_n: optional number
+        :returns: dict: key - depth, float; value - if top_n=1 then  SimpleNamespace( 'colour'= RGBA float tuple, 'className'= class name, 'classText'= mineral name ) & if top_n>1 then [ SimpleNamespace(..) .. ]
         '''
-        LOGGER.debug(" get_borehole_data(%s, %d, %s)", log_id, height_resol, class_name)
+        LOGGER.debug(" get_borehole_data(%s, %d, %s, %d)", log_id, height_resol, class_name, top_n)
+        # Check top_n parameter
+        if top_n < 1:
+            LOGGER.warning("top_n parameter has invalid value, setting to default")
+            top_n = 1
+
         # Send HTTP request, get response
         json_data = self.svc.get_downsampled_data(log_id,
             interval=height_resol, outputformat='json',
@@ -297,22 +303,27 @@ class NVCLReader:
             sorted_meas_list = sorted(meas_list, key=lambda x: x['roundedDepth'])
             for depth, group in itertools.groupby(sorted_meas_list, lambda x: x['roundedDepth']):
                 # Filter out invalid values
-                filtered_group = itertools.filterfalse(lambda x: x['classText'].upper() == 'INVALID',
+                filtered_group = itertools.filterfalse(lambda x: x['classText'].upper() in ['INVALID','NOTAROK'],
                                                        group)
                 # Make a dict keyed on depth, value is element with largest count
                 try:
-                    max_elem = max(filtered_group, key=lambda x: x['classCount'])
+                    sorted_elem = sorted(filtered_group, key=lambda x: x['classCount'])
                 except ValueError:
                     # Sometimes 'filtered_group' is empty
                     LOGGER.warning("No valid values at depth %s", str(depth))
                     continue
-                col = bgr2rgba(max_elem['colour'])
-                kv_dict = {'className': class_name, **max_elem, 'colour': col}
-                del kv_dict['roundedDepth']
-                del kv_dict['classCount']
-                depth_dict[depth] = SimpleNamespace()
-                for key, val in kv_dict.items():
-                    setattr(depth_dict[depth], key, val)
+                depth_dict[depth] = []
+                for elem in sorted_elem[:top_n]:
+                    data_point = SimpleNamespace()
+                    col = bgr2rgba(elem['colour'])
+                    kv_dict = {'className': class_name, **elem, 'colour': col}
+                    del kv_dict['roundedDepth']
+                    for key, val in kv_dict.items():
+                        setattr(data_point, key, val)
+                    depth_dict[depth].append(data_point)
+                # If there's only one element in list, then substitute list with element
+                if top_n == 1 and len(depth_dict[depth]) == 1:
+                    depth_dict[depth] = depth_dict[depth][0]
 
         LOGGER.debug("get_borehole_data() Returning %s", repr(depth_dict))
         return depth_dict

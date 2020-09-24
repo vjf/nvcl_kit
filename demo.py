@@ -16,7 +16,8 @@ prov_list = [ ("http://www.mrt.tas.gov.au:80/web-services/ows", "http://www.mrt.
               ("http://geology.data.nt.gov.au:80/geoserver/ows", "http://geology.data.nt.gov.au:80/NVCLDataServices", None, True, "2.0.0", 20),
               ("https://sarigdata.pir.sa.gov.au/geoserver/ows", "https://sarigdata.pir.sa.gov.au/nvcl/NVCLDataServices",None, False, "1.1.0", 20),
               # NB: Western Australia's DMIRS only supports WFS v2.0.0
-              ("http://geossdi.dmp.wa.gov.au/services/ows",  "http://geossdi.dmp.wa.gov.au/NVCLDataServices", None, False, "2.0.0", 20) ]
+              ("http://geossdi.dmp.wa.gov.au/services/ows",  "http://geossdi.dmp.wa.gov.au/NVCLDataServices", None, False, "2.0.0", 20)
+]
 
 
 def do_demo(wfs, nvcl, bbox, local_filt, version, max):
@@ -88,11 +89,14 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
     LOG_TYPE = '1'
     for ild in imagelog_data_list[:10]:
         if ild.log_type == LOG_TYPE and ild.log_name == ANALYSIS_CLASS:
-            bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
             print('get_borehole_data()')
-            # Print out the colour, mineral and class name at each depth
+            # Get top 5 minerals at each depth
+            # bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS, top_n=5)
+            # Get most common mineral at each depth 
+            bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
+            # Print out the most common colour, mineral and class name at each depth
             for depth in bh_data:
-                print("At ", depth, "my class, mineral, colour is", bh_data[depth].className,
+                print("At ", depth, "most common class, mineral, colour is", bh_data[depth].className,
                       bh_data[depth].classText, bh_data[depth].colour)
 
     print('get_spectrallog_data()')
