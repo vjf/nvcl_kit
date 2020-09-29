@@ -10,6 +10,7 @@ Welcome to nvcl_kit's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+   introduction
 
 
 Indices and tables

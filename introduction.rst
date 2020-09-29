@@ -1,10 +1,8 @@
-nvcl\_kit: A simple module used to read Australian NVCL borehole data
-=====================================================================
 
-How to extract NVCL borehole data
----------------------------------
+Introduction: how to extract NVCL borehole data
+-----------------------------------------------
 
-**1. Instantiate class**
+**1. Create a 'SimpleNamespace' object, fill it with parameters, instantiate class**
 
 .. code:: python
 
