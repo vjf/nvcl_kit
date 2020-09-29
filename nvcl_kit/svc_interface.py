@@ -1,6 +1,6 @@
 """
 This forms the interface between the 'reader' class and the low-level web APIs.
-
+These classes should only be called from within the 'reader' class.
 """
 import urllib
 import urllib.parse
