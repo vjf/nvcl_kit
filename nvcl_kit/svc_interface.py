@@ -1,6 +1,6 @@
 """
 This forms the interface between the 'reader' class and the low-level web APIs.
-These classes should only be called from within the 'reader' class.
+
 """
 import urllib
 import urllib.parse
@@ -31,7 +31,7 @@ if not LOGGER.hasHandlers():
     LOGGER.addHandler(HANDLER)
 
 
-class ServiceInterface:
+class _ServiceInterface:
     ''' Call the web APIs for NVCL services
 
         NB: 'ServiceInterface' should only be called from within the 'reader' class.

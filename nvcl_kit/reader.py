@@ -21,7 +21,7 @@ from http.client import HTTPException
 
 from shapely.geometry.polygon import LinearRing
 
-from nvcl_kit.svc_interface import ServiceInterface
+from nvcl_kit.svc_interface import _ServiceInterface
 
 ENFORCE_IS_PUBLIC = True
 ''' Enforce the 'is_public' flag , i.e. any data with 'is_public' set to 'false'
@@ -266,7 +266,7 @@ class NVCLReader:
         if self.wfs and not self._fetch_borehole_list():
             self.wfs = None
 
-        self.svc = ServiceInterface(self.param_obj.NVCL_URL, TIMEOUT)
+        self.svc = _ServiceInterface(self.param_obj.NVCL_URL, TIMEOUT)
 
 
     def get_borehole_data(self, log_id, height_resol, class_name, top_n=1):
@@ -307,7 +307,7 @@ class NVCLReader:
                                                        group)
                 # Make a dict keyed on depth, value is element with largest count
                 try:
-                    sorted_elem = sorted(filtered_group, key=lambda x: x['classCount'])
+                    sorted_elem = sorted(filtered_group, key=lambda x: x['classCount'], reverse=True)
                 except ValueError:
                     # Sometimes 'filtered_group' is empty
                     LOGGER.warning("No valid values at depth %s", str(depth))

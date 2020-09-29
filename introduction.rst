@@ -85,14 +85,13 @@ data**
     LOG_TYPE = '1'
     for ild in imagelog_data_list:
         if ild.log_type == LOG_TYPE and ild.log_name == ANALYSIS_CLASS:
-            # If you want the top 5 minerals at each depth, use this:
-            # bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS, top_n=5)
-            #
-            # Print out the class name, mineral and colour of most common mineral at each depth
-            bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
+            # Get top 5 minerals at each depth
+            bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS, top_n=5)
             for depth in bh_data:
-                print("At ", depth, "the class, most common mineral & its colour is", bh_data[depth].className,
-                      bh_data[depth].classText, bh_data[depth].colour)
+                for meas in bh_data[depth]:
+                    print("At {} metres: class={}, abundance={}, mineral={}, colour={}".format(depth, meas.className,
+                      meas.classCount, meas.classText, meas.colour))
+                print()
 
 **7. Using the NVCL ids from Step 5, you can also call
 get\_spectrallog\_data() and get\_profilometer\_data()**
