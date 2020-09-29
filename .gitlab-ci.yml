@@ -45,7 +45,7 @@ build:
 pages:
   stage: Documentation
   script:
-    - pip3 install sphinx sphinx-rtd-theme owslib
+    - pip3 install sphinx sphinx-rtd-theme owslib shapely
     - cd doc ; make html
     - mv _build/html/ ../public/
   artifacts:
