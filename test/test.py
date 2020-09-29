@@ -647,12 +647,12 @@ class TestNVCLReader(unittest.TestCase):
         self.assertEqual(isinstance(bh_data_list[5.0], SimpleNamespace), True)
 
         self.assertEqual(bh_data_list[5.0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[5.0].classText, 'KAOLIN')
-        self.assertEqual(bh_data_list[5.0].colour, (1.0, 0.0, 0.0, 1.0))
+        self.assertEqual(bh_data_list[5.0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[5.0].colour, (1.0, 1.0, 0.0, 1.0))
 
         self.assertEqual(bh_data_list[275.0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[275.0].classText, 'CARBONATE')
-        self.assertEqual(bh_data_list[275.0].colour, (0.0, 0.0, 1.0, 1.0))
+        self.assertEqual(bh_data_list[275.0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[275.0].colour, (1.0, 1.0, 0.0, 1.0))
 
 
     def test_borehole_data_top_n(self):
@@ -665,18 +665,18 @@ class TestNVCLReader(unittest.TestCase):
         self.assertEqual(isinstance(bh_data_list[5.0], list), True)
 
         self.assertEqual(bh_data_list[5.0][0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[5.0][0].classText, 'KAOLIN')
-        self.assertEqual(bh_data_list[5.0][0].colour, (1.0, 0.0, 0.0, 1.0))
+        self.assertEqual(bh_data_list[5.0][0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[5.0][0].colour, (1.0, 1.0, 0.0, 1.0))
 
         self.assertEqual(bh_data_list[5.0][1].className, 'dummy-class')
-        self.assertEqual(bh_data_list[5.0][1].classText, 'WHITE-MICA')
-        self.assertEqual(bh_data_list[5.0][1].colour, (1.0, 1.0, 0.0, 1.0))
+        self.assertEqual(bh_data_list[5.0][1].classText, 'KAOLIN')
+        self.assertEqual(bh_data_list[5.0][1].colour, (1.0, 0.0, 0.0, 1.0))
 
         self.assertEqual(len(bh_data_list[275.0]), top_n)
 
         self.assertEqual(bh_data_list[275.0][0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[275.0][0].classText, 'CARBONATE')
-        self.assertEqual(bh_data_list[275.0][0].colour, (0.0, 0.0, 1.0, 1.0))
+        self.assertEqual(bh_data_list[275.0][0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[275.0][0].colour, (1.0, 1.0, 0.0, 1.0))
 
         self.assertEqual(bh_data_list[275.0][1].className, 'dummy-class')
         self.assertEqual(bh_data_list[275.0][1].classText, 'CHLORITE')
@@ -691,12 +691,12 @@ class TestNVCLReader(unittest.TestCase):
         self.assertEqual(isinstance(bh_data_list[5.0], SimpleNamespace), True)
 
         self.assertEqual(bh_data_list[5.0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[5.0].classText, 'KAOLIN')
-        self.assertEqual(bh_data_list[5.0].colour, (1.0, 0.0, 0.0, 1.0))
+        self.assertEqual(bh_data_list[5.0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[5.0].colour, (1.0, 1.0, 0.0, 1.0))
 
         self.assertEqual(bh_data_list[275.0].className, 'dummy-class')
-        self.assertEqual(bh_data_list[275.0].classText, 'CARBONATE')
-        self.assertEqual(bh_data_list[275.0].colour, (0.0, 0.0, 1.0, 1.0))
+        self.assertEqual(bh_data_list[275.0].classText, 'WHITE-MICA')
+        self.assertEqual(bh_data_list[275.0].colour, (1.0, 1.0, 0.0, 1.0))
 
 
     def test_borehole_exception(self):

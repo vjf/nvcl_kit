@@ -91,13 +91,12 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
         if ild.log_type == LOG_TYPE and ild.log_name == ANALYSIS_CLASS:
             print('get_borehole_data()')
             # Get top 5 minerals at each depth
-            # bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS, top_n=5)
-            # Get most common mineral at each depth 
-            bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS)
-            # Print out the most common colour, mineral and class name at each depth
+            bh_data = reader.get_borehole_data(ild.log_id, HEIGHT_RESOLUTION, ANALYSIS_CLASS, top_n=5)
             for depth in bh_data:
-                print("At ", depth, "most common class, mineral, colour is", bh_data[depth].className,
-                      bh_data[depth].classText, bh_data[depth].colour)
+                for meas in bh_data[depth]:
+                    print("At {} metres: class={}, abundance={}, mineral={}, colour={}".format(depth, meas.className,
+                      meas.classCount, meas.classText, meas.colour))
+                print()
 
     print('get_spectrallog_data()')
     spectrallog_data_list = reader.get_spectrallog_data(nvcl_id)
