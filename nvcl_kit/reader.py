@@ -299,31 +299,33 @@ class NVCLReader:
         except json.decoder.JSONDecodeError:
             LOGGER.warning("Logid not known")
         else:
-            # Sort then group by depth
-            sorted_meas_list = sorted(meas_list, key=lambda x: x['roundedDepth'])
-            for depth, group in itertools.groupby(sorted_meas_list, lambda x: x['roundedDepth']):
-                # Filter out invalid values
-                filtered_group = itertools.filterfalse(lambda x: x['classText'].upper() in ['INVALID','NOTAROK'],
+            # Sometimes meas_list is None
+            if isinstance(meas_list, list):
+                # Sort then group by depth
+                sorted_meas_list = sorted(meas_list, key=lambda x: x['roundedDepth'])
+                for depth, group in itertools.groupby(sorted_meas_list, lambda x: x['roundedDepth']):
+                    # Filter out invalid values
+                    filtered_group = itertools.filterfalse(lambda x: x['classText'].upper() in ['INVALID','NOTAROK'],
                                                        group)
-                # Make a dict keyed on depth, value is element with largest count
-                try:
-                    sorted_elem = sorted(filtered_group, key=lambda x: x['classCount'], reverse=True)
-                except ValueError:
-                    # Sometimes 'filtered_group' is empty
-                    LOGGER.warning("No valid values at depth %s", str(depth))
-                    continue
-                depth_dict[depth] = []
-                for elem in sorted_elem[:top_n]:
-                    data_point = SimpleNamespace()
-                    col = bgr2rgba(elem['colour'])
-                    kv_dict = {'className': class_name, **elem, 'colour': col}
-                    del kv_dict['roundedDepth']
-                    for key, val in kv_dict.items():
-                        setattr(data_point, key, val)
-                    depth_dict[depth].append(data_point)
-                # If there's only one element in list, then substitute list with element
-                if top_n == 1 and len(depth_dict[depth]) == 1:
-                    depth_dict[depth] = depth_dict[depth][0]
+                    # Make a dict keyed on depth, value is element with largest count
+                    try:
+                        sorted_elem = sorted(filtered_group, key=lambda x: x['classCount'], reverse=True)
+                    except ValueError:
+                        # Sometimes 'filtered_group' is empty
+                        LOGGER.warning("No valid values at depth %s", str(depth))
+                        continue
+                    depth_dict[depth] = []
+                    for elem in sorted_elem[:top_n]:
+                        data_point = SimpleNamespace()
+                        col = bgr2rgba(elem['colour'])
+                        kv_dict = {'className': class_name, **elem, 'colour': col}
+                        del kv_dict['roundedDepth']
+                        for key, val in kv_dict.items():
+                            setattr(data_point, key, val)
+                        depth_dict[depth].append(data_point)
+                    # If there's only one element in list, then substitute list with element
+                    if top_n == 1 and len(depth_dict[depth]) == 1:
+                        depth_dict[depth] = depth_dict[depth][0]
 
         LOGGER.debug("get_borehole_data() Returning %s", repr(depth_dict))
         return depth_dict
