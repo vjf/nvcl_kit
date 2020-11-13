@@ -9,7 +9,6 @@ from owslib.wms import WebMapService
 from owslib.util import ServiceException
 from http.client import HTTPException
 
-
 """
 Retrieves stratigraphy data from the "Australian Stratigraphic Units Database"
 
@@ -18,8 +17,6 @@ Ref:
 
 https://www.ga.gov.au/data-pubs/datastandards/stratigraphic-units
 """
-
-
 
 GA_SURF_GEO_WMS = "http://services.ga.gov.au/gis/services/GA_Surface_Geology/MapServer/WmsServer"
 """ Geoscience Australia Surface Geology WMS Service
@@ -60,6 +57,7 @@ if not LOGGER.hasHandlers():
     # Add handler to LOGGER and set level
     LOGGER.addHandler(HANDLER)
 
+
 def _get_asud_strat_no(lon, lat):
     ''' Retrieves the stratigraphy number from the ASUD given latitude & longitude (EPSG:4326)
 
@@ -70,13 +68,13 @@ def _get_asud_strat_no(lon, lat):
     # Convert lat/lon EPSG:4326 to EPSG:3857
     transformer = Transformer.from_crs("EPSG:4326", WMS_CRS, always_xy=True)
     bb_x, bb_y = transformer.transform(lon, lat)
-    
+
     # Connect to WMS service
     try:
-       wms = WebMapService(url=GA_SURF_GEO_WMS, version='1.3.0')
+        wms = WebMapService(url=GA_SURF_GEO_WMS, version='1.3.0')
     except RequestException as exc:
-       LOGGER.warning("Cannot connect to WMS service: %s", str(exc))
-       return None
+        LOGGER.warning("Cannot connect to WMS service: %s", str(exc))
+        return None
 
     resp = None
 
@@ -89,12 +87,12 @@ def _get_asud_strat_no(lon, lat):
                 resp = wms.getfeatureinfo(
                               layers=[WMS_LAYER_NAME],
                               srs=WMS_CRS,
-                              bbox=(bb_x-bb_sz,bb_y-bb_sz,bb_x+bb_sz,bb_y+bb_sz),
+                              bbox=(bb_x-bb_sz, bb_y-bb_sz, bb_x+bb_sz, bb_y+bb_sz),
                               size=(1254, 318),
                               format='image/jpeg',
                               query_layers=[WMS_LAYER_NAME],
                               info_format=info_format,
-                              xy=(789,128))
+                              xy=(789, 128))
             except (RequestException, HTTPException, ServiceException, OSError) as exc:
                 LOGGER.warning("WMS getfeatureinfo exception: %s", str(exc))
                 return None
@@ -109,7 +107,7 @@ def _get_asud_strat_no(lon, lat):
 
         # Fetch the stratigraphy number
         try:
-            strat_no=featureColl["features"][0]["properties"]["stratno"]
+            strat_no = featureColl["features"][0]["properties"]["stratno"]
         except(IndexError, KeyError):
             # Not found
             LOGGER.debug("Could not find stratigraphy number")
@@ -129,16 +127,15 @@ def get_asud_record(lon, lat):
     '''
     strat_no = _get_asud_strat_no(lon, lat)
     if strat_no is not None:
-        resp = post(GSUD_API, data=json.dumps({"actionName":"searchStratigraphicUnitsDetails","stratNo":strat_no}))
+        resp = post(GSUD_API, data=json.dumps({"actionName": "searchStratigraphicUnitsDetails", "stratNo": strat_no}))
         try:
             jresp = json.loads(resp.text)
         except json.decoder.JSONDecodeError as exc:
             LOGGER.warning("Error decoding ASUD json response: %s", str(exc))
-            jresp = { "response": None }
+            jresp = {"response": None}
         return(jresp["response"])
     return None
 
 
 if __name__ == "__main__":
-    print(get_asud_record(140.625,-31.353637))
-    
+    print(get_asud_record(140.625, -31.353637))

@@ -19,7 +19,7 @@ from owslib.util import ServiceException
 
 from http.client import HTTPException
 
-from shapely.geometry.polygon import LinearRing
+from shapely.geometry.polygon import LinearRing, Point
 
 from nvcl_kit.svc_interface import _ServiceInterface
 
@@ -51,25 +51,24 @@ if not LOGGER.hasHandlers():
     LOGGER.addHandler(HANDLER)
 
 # Namespaces for WFS Borehole response
-NS = {'wfs':"http://www.opengis.net/wfs",
-      'xs':"http://www.w3.org/2001/XMLSchema",
-      'it.geosolutions':"http://www.geo-solutions.it",
-      'mo':"http://xmlns.geoscience.gov.au/minoccml/1.0",
-      'topp':"http://www.openplans.org/topp",
-      'mt':"http://xmlns.geoscience.gov.au/mineraltenementml/1.0",
-      'nvcl':"http://www.auscope.org/nvcl",
-      'gsml':"urn:cgi:xmlns:CGI:GeoSciML:2.0",
-      'ogc':"http://www.opengis.net/ogc",
-      'gsmlp':"http://xmlns.geosciml.org/geosciml-portrayal/4.0",
-      'sa':"http://www.opengis.net/sampling/1.0",
-      'ows':"http://www.opengis.net/ows",
-      'om':"http://www.opengis.net/om/1.0",
-      'xlink':"http://www.w3.org/1999/xlink",
-      'gml':"http://www.opengis.net/gml",
-      'er':"urn:cgi:xmlns:GGIC:EarthResource:1.1",
-      'xsi':"http://www.w3.org/2001/XMLSchema-instance",
-      'gml32':"http://www.opengis.net/gml/3.2"}
-
+NS = {'wfs': "http://www.opengis.net/wfs",
+      'xs': "http://www.w3.org/2001/XMLSchema",
+      'it.geosolutions': "http://www.geo-solutions.it",
+      'mo': "http://xmlns.geoscience.gov.au/minoccml/1.0",
+      'topp': "http://www.openplans.org/topp",
+      'mt': "http://xmlns.geoscience.gov.au/mineraltenementml/1.0",
+      'nvcl': "http://www.auscope.org/nvcl",
+      'gsml': "urn:cgi:xmlns:CGI:GeoSciML:2.0",
+      'ogc': "http://www.opengis.net/ogc",
+      'gsmlp': "http://xmlns.geosciml.org/geosciml-portrayal/4.0",
+      'sa': "http://www.opengis.net/sampling/1.0",
+      'ows': "http://www.opengis.net/ows",
+      'om': "http://www.opengis.net/om/1.0",
+      'xlink': "http://www.w3.org/1999/xlink",
+      'gml': "http://www.opengis.net/gml",
+      'er': "urn:cgi:xmlns:GGIC:EarthResource:1.1",
+      'xsi': "http://www.w3.org/2001/XMLSchema-instance",
+      'gml32': "http://www.opengis.net/gml/3.2"}
 
 # From GeoSciML BoreholeView 4.1
 GSMLP_IDS = ['identifier', 'name', 'description', 'purpose', 'status', 'drillingMethod',
@@ -77,8 +76,6 @@ GSMLP_IDS = ['identifier', 'name', 'description', 'purpose', 'status', 'drilling
              'inclinationType', 'boreholeMaterialCustodian', 'boreholeLength_m',
              'elevation_m', 'elevation_srs', 'positionalAccuracy', 'source', 'parentBorehole_uri',
              'metadata_uri', 'genericSymbolizer']
-
-
 
 TIMEOUT = 6000
 ''' Timeout for querying WFS and NVCL services (seconds)
@@ -99,7 +96,7 @@ def bgr2rgba(bgr):
     :param bgr: BGR colour integer
     :returns: RGBA float tuple
     '''
-    return ((bgr & 255)/255.0, ((bgr & 65280) >> 8)/255.0, (bgr >> 16)/255.0, 1.0)
+    return ((bgr & 255) / 255.0, ((bgr & 65280) >> 8) / 255.0, (bgr >> 16) / 255.0, 1.0)
 
 
 class NVCLReader:
@@ -109,7 +106,7 @@ class NVCLReader:
     def __init__(self, param_obj, wfs=None, log_lvl=None):
         '''
         :param param_obj: SimpleNamespace() object with parameters.
-          Fields are: 
+          Fields are:
 
             * NVCL_URL - URL of NVCL service
             * WFS_URL - URL of WFS service, GeoSciML V4.1 BoreholeView
@@ -177,7 +174,7 @@ class NVCLReader:
                     return
         else:
             # If neither BBOX nor POLYGON is defined, use default BBOX
-            self.param_obj.BBOX = {"west": -180.0,"south": -90.0,"east": 180.0,"north": 0.0}
+            self.param_obj.BBOX = {"west": -180.0, "south": -90.0, "east": 180.0, "north": 0.0}
 
         # Check DEPTHS parameter
         if hasattr(self.param_obj, "DEPTHS"):
@@ -188,7 +185,7 @@ class NVCLReader:
             if len(depths) != 2:
                 LOGGER.warning("'DEPTHS' parameter does not have length of 2")
                 return
-            if type(depth[0]) not in [int, float] or type(depth[1]) not in [int, float]:
+            if type(depths[0]) not in [int, float] or type(depths[1]) not in [int, float]:
                 LOGGER.warning("'DEPTHS' parameter does not contain numerics")
                 return
             if depths[0] >= depths[1]:
@@ -218,18 +215,17 @@ class NVCLReader:
 
         # Roughly check BOREHOLE_CRS EPSG: value
         if not hasattr(self.param_obj, 'BOREHOLE_CRS'):
-            self.param_obj.BOREHOLE_CRS = "EPSG:4326" # "EPSG:4283"
-        elif not isinstance(self.param_obj.BOREHOLE_CRS, str) or \
-             "EPSG:" not in self.param_obj.BOREHOLE_CRS.upper() or \
-             not self.param_obj.BOREHOLE_CRS[-4:].isnumeric():
+            self.param_obj.BOREHOLE_CRS = "EPSG:4326"   # "EPSG:4283"
+        elif (not isinstance(self.param_obj.BOREHOLE_CRS, str) or
+              "EPSG:" not in self.param_obj.BOREHOLE_CRS.upper() or
+              not self.param_obj.BOREHOLE_CRS[-4:].isnumeric()):
             LOGGER.warning("'BOREHOLE_CRS' parameter is not an EPSG string")
             return
 
         # Roughly check WFS_VERSION value
         if not hasattr(self.param_obj, 'WFS_VERSION'):
             self.param_obj.WFS_VERSION = "1.1.0"
-        elif not isinstance(self.param_obj.WFS_VERSION, str) or \
-             not self.param_obj.WFS_VERSION[0].isdigit():
+        elif not isinstance(self.param_obj.WFS_VERSION, str) or not self.param_obj.WFS_VERSION[0].isdigit():
             LOGGER.warning("'WFS_VERSION' parameter is not a numeric string")
             return
 
@@ -268,7 +264,6 @@ class NVCLReader:
 
         self.svc = _ServiceInterface(self.param_obj.NVCL_URL, TIMEOUT)
 
-
     def get_borehole_data(self, log_id, height_resol, class_name, top_n=1):
         ''' Retrieves borehole mineral data for a borehole
 
@@ -286,8 +281,8 @@ class NVCLReader:
 
         # Send HTTP request, get response
         json_data = self.svc.get_downsampled_data(log_id,
-            interval=height_resol, outputformat='json',
-            startdepth=self.min_depth, enddepth=self.max_depth)
+                                                  interval=height_resol, outputformat='json',
+                                                  startdepth=self.min_depth, enddepth=self.max_depth)
         if not json_data:
             LOGGER.debug("get_borehole_data() json_data= %s", repr(json_data))
             return OrderedDict()
@@ -305,8 +300,8 @@ class NVCLReader:
                 sorted_meas_list = sorted(meas_list, key=lambda x: x['roundedDepth'])
                 for depth, group in itertools.groupby(sorted_meas_list, lambda x: x['roundedDepth']):
                     # Filter out invalid values
-                    filtered_group = itertools.filterfalse(lambda x: x['classText'].upper() in ['INVALID','NOTAROK'],
-                                                       group)
+                    filtered_group = itertools.filterfalse(lambda x: x['classText'].upper() in ['INVALID', 'NOTAROK'],
+                                                           group)
                     # Make a dict keyed on depth, value is element with largest count
                     try:
                         sorted_elem = sorted(filtered_group, key=lambda x: x['classCount'], reverse=True)
@@ -330,7 +325,6 @@ class NVCLReader:
         LOGGER.debug("get_borehole_data() Returning %s", repr(depth_dict))
         return depth_dict
 
-
     def _clean_xml_parse(self, xml_str):
         ''' Filters out badly-formatted XML
 
@@ -342,7 +336,6 @@ class NVCLReader:
         except ET.ParseError:
             return ET.Element('')
         return root
-
 
     def get_datasetid_list(self, nvcl_id):
         ''' Retrieves a list of dataset ids
@@ -360,7 +353,6 @@ class NVCLReader:
             if dataset_id:
                 datasetid_list.append(dataset_id)
         return datasetid_list
-
 
     def get_dataset_list(self, nvcl_id):
         ''' Retrieves a list of dataset objects
@@ -383,15 +375,14 @@ class NVCLReader:
             dataset_obj = SimpleNamespace(dataset_id=dataset_id,
                                           dataset_name=dataset_name)
             for label, key in [('borehole_uri', './boreholeURI'),
-                                ('tray_id', './trayID'),
-                                ('section_id', './sectionID'),
-                                ('domain_id', './domainID')]:
+                               ('tray_id', './trayID'),
+                               ('section_id', './sectionID'),
+                               ('domain_id', './domainID')]:
                 val = child.findtext(key, default=None)
                 if val:
                     setattr(dataset_obj, label, val)
             dataset_list.append(dataset_obj)
         return dataset_list
-
 
     def get_all_imglogs(self, dataset_id):
         ''' Retrieves a list of all log objects from mosaic service
@@ -401,7 +392,6 @@ class NVCLReader:
         '''
         return self._filter_mosaic_logs(dataset_id)
 
-
     def get_mosaic_imglogs(self, dataset_id):
         ''' Retrieves a list of 'Mosaic' log objects from mosaic service
 
@@ -409,7 +399,6 @@ class NVCLReader:
         :return: a list of SimpleNamespace objects. Fields are: 'log_id', 'log_name', 'sample_count'. On error returns an empty list.
         '''
         return self._filter_mosaic_logs(dataset_id, 'Mosaic')
-
 
     def get_tray_thumb_imglogs(self, dataset_id):
         ''' Retrieves a list of 'Tray Thumbnail Images' log objects from mosaic service
@@ -419,7 +408,6 @@ class NVCLReader:
         '''
         return self._filter_mosaic_logs(dataset_id, 'Tray Thumbnail Images')
 
-
     def get_tray_imglogs(self, dataset_id):
         ''' Retrieves 'Tray Image' log objects from mosaic service
 
@@ -427,7 +415,6 @@ class NVCLReader:
         :return: a list of SimpleNamespace objects. Fields are: 'log_id', 'log_name', 'sample_count'. On error returns an empty list.
         '''
         return self._filter_mosaic_logs(dataset_id, 'Tray Images')
-
 
     def get_imagery_imglogs(self, dataset_id):
         ''' Retrieves 'Imagery' log objects from mosaic service
@@ -437,7 +424,6 @@ class NVCLReader:
         '''
 
         return self._filter_mosaic_logs(dataset_id, 'Imagery')
-
 
     def _filter_mosaic_logs(self, dataset_id, target_log_name='*'):
         ''' Retrieves logs with a particular name using log collection mosaic service
@@ -460,13 +446,12 @@ class NVCLReader:
                 sample_count = 0.0
             if not log_id or not log_name:
                 continue
-            if target_log_name.lower() == log_name.lower() or target_log_name=='*':
+            if target_log_name.lower() == log_name.lower() or target_log_name == '*':
                 dataset_obj = SimpleNamespace(log_id=log_id,
-                                          log_name=log_name,
-                                          sample_count=sample_count)
+                                              log_name=log_name,
+                                              sample_count=sample_count)
                 dataset_list.append(dataset_obj)
         return dataset_list
-
 
     def get_mosaic_image(self, log_id, **options):
         ''' Retrieves images of NVCL core trays
@@ -480,7 +465,6 @@ class NVCLReader:
         '''
         return self.svc.get_mosaic(log_id, **options)
 
-
     def get_tray_thumb_html(self, dataset_id, log_id, **options):
         ''' Gets core tray thumbnail images as HTML
 
@@ -493,7 +477,6 @@ class NVCLReader:
         '''
         return self.svc.get_mosaic_tray_thumbnail(dataset_id, log_id, **options)
 
-
     def get_tray_thumb_jpg(self, log_id, sample_no='0'):
         ''' Gets core tray thumbnail images as JPEG
 
@@ -502,7 +485,6 @@ class NVCLReader:
         :return: thumbnail image in PNG format
         '''
         return self.svc.get_display_tray_thumb(log_id, sample_no)
-
 
     def get_tray_depths(self, log_id):
         ''' Gets tray depths
@@ -522,11 +504,10 @@ class NVCLReader:
             if not sample_no or not start_value or not end_value:
                 continue
             image_tray_obj = SimpleNamespace(sample_no=sample_no,
-                                          start_value=start_value,
-                                          end_value=end_value)
+                                             start_value=start_value,
+                                             end_value=end_value)
             image_tray_list.append(image_tray_obj)
         return image_tray_list
-
 
     def get_scalar_logs(self, dataset_id):
         ''' Retrieves a list of log objects for scalar plot service
@@ -548,8 +529,7 @@ class NVCLReader:
             log_type = child.findtext('./logType', default=None)
             algorithm_id = child.findtext('./algorithmoutID', default=None)
             # Only types 1,2,5,6 can be used
-            if log_id and log_name and log_type in ['1','2','5','6'] \
-                                                             and algorithm_id:
+            if log_id and log_name and log_type in ['1', '2', '5', '6'] and algorithm_id:
                 log = SimpleNamespace(log_id=log_id,
                                       log_name=log_name,
                                       is_public=is_public,
@@ -558,7 +538,6 @@ class NVCLReader:
                 log_list.append(log)
         return log_list
 
-
     def get_scalar_data(self, log_id_list):
         ''' Downloads scalar data in CSV format
 
@@ -566,7 +545,6 @@ class NVCLReader:
         :return: scalar data in CSV format
         '''
         return self.svc.download_scalar(log_id_list)
-
 
     def get_sampled_scalar_data(self, log_id, **options):
         ''' Returns data in downsampled format, to a certain height resolution
@@ -580,7 +558,6 @@ class NVCLReader:
         :param interval: (optional) resolution to bin or average over
         '''
         return self.svc.get_downsampled_data(log_id, **options)
-
 
     def plot_scalar_png(self, log_id, **options):
         ''' Draws a plot as an image in PNG format.
@@ -602,7 +579,6 @@ class NVCLReader:
         :return: a 2d plot as a PNG image
         '''
         return self.svc.get_plot_scalar(log_id, **options)
-
 
     def plot_scalars_html(self, log_id_list, **options):
         ''' Draws multiple plots, returned in HTML format
@@ -628,7 +604,6 @@ class NVCLReader:
         # NB: Service only plots the first 6 log ids
         return self.svc.get_plot_multi_scalar(log_id_list[:6], **options)
 
-
     def get_imagelog_data(self, nvcl_id):
         ''' Retrieves a set of image log data for a particular borehole
 
@@ -648,11 +623,10 @@ class NVCLReader:
             log_type = child.findtext('./logType', default='')
             log_id = child.findtext('./LogID', default='')
             alg_id = child.findtext('./algorithmoutID', default='')
-            if (is_public == 'true' or not ENFORCE_IS_PUBLIC) and \
-                      log_name != '' and log_type != '' and log_id != '':
-                logid_list.append(SimpleNamespace(log_id=log_id, log_type=log_type, log_name=log_name, algorithmout_id=alg_id))
+            if (is_public == 'true' or not ENFORCE_IS_PUBLIC) and log_name != '' and log_type != '' and log_id != '':
+                logid_list.append(SimpleNamespace(log_id=log_id, log_type=log_type, log_name=log_name,
+                                                  algorithmout_id=alg_id))
         return logid_list
-
 
     def get_spectrallog_data(self, nvcl_id):
         ''' Retrieves a set of spectral log data for a particular borehole
@@ -677,7 +651,7 @@ class NVCLReader:
             except ValueError:
                 sample_count = 0
             script_raw = child.findtext('./script', default='')
-            script_str = script_raw.replace('; ',';')
+            script_str = script_raw.replace('; ', ';')
             script_str_list = script_str.split(';')
             script_dict = {}
             for assgn in script_str_list:
@@ -686,12 +660,13 @@ class NVCLReader:
                     script_dict[var] = val
             wavelengths = child.findtext('./wavelengths', default='')
             try:
-                wv_list = [ float(wv_str) for wv_str in wavelengths.split(',') ]
+                wv_list = [float(wv_str) for wv_str in wavelengths.split(',')]
             except ValueError:
                 wv_list = []
-            logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, wavelength_units=wavelength_units, sample_count=sample_count, script_raw=script_raw, script=script_dict, wavelengths=wv_list))
+            logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, wavelength_units=wavelength_units,
+                                              sample_count=sample_count, script_raw=script_raw, script=script_dict,
+                                              wavelengths=wv_list))
         return logid_list
-
 
     def get_profilometer_data(self, nvcl_id):
         ''' Retrieves a set of profilometer logs for a particular borehole
@@ -699,7 +674,7 @@ class NVCLReader:
         :param nvcl_id: NVCL 'holeidentifier' parameter,
                         the 'nvcl_id' from each dict item retrieved from 'get_boreholes_list()' or 'get_nvcl_id_list()'
         :returns: a list of SimpleNamespace() objects with attributes:
-                  log_id, log_name, sample_count, floats_per_sample, 
+                  log_id, log_name, sample_count, floats_per_sample,
                   min_val, max_val
         '''
         response_str = self.svc.get_dataset_collection(nvcl_id)
@@ -729,11 +704,10 @@ class NVCLReader:
             logid_list.append(SimpleNamespace(log_id=log_id, log_name=log_name, sample_count=sample_count, floats_per_sample=floats_per_sample, min_val=min_val, max_val=max_val))
         return logid_list
 
-
     def get_boreholes_list(self):
         ''' Returns a list of dictionary objects, extracted from WFS requests of boreholes. Fields are mostly taken from GeoSciML v4.1 Borehole View:
 
-            'nvcl_id', 'identifier', 'name', 'description', 'purpose', 'status', 'drillingMethod', 'operator', 'driller', 'drillStartDate', 'drillEndDate', 'startPoint', 'inclinationType', 'href', 'boreholeMaterialCustodian', 'boreholeLength_m', 'elevation_m', 'elevation_srs', 'positionalAccuracy', 'source', 'x', 'y, 'z', 'parentBorehole_uri', 'metadata_uri', 'genericSymbolizer' 
+            'nvcl_id', 'identifier', 'name', 'description', 'purpose', 'status', 'drillingMethod', 'operator', 'driller', 'drillStartDate', 'drillEndDate', 'startPoint', 'inclinationType', 'href', 'boreholeMaterialCustodian', 'boreholeLength_m', 'elevation_m', 'elevation_srs', 'positionalAccuracy', 'source', 'x', 'y, 'z', 'parentBorehole_uri', 'metadata_uri', 'genericSymbolizer'
 
             NB:
                 (1) Depending on the WFS, not all fields will have values
@@ -743,8 +717,7 @@ class NVCLReader:
 
             :returns: a list of dictionaries whose fields correspond to a response from a WFS request of GeoSciML v4.1 BoreholeView
         '''
-        return self.borehole_list  
-
+        return self.borehole_list
 
     def get_nvcl_id_list(self):
         '''
@@ -754,7 +727,6 @@ class NVCLReader:
         :return: a list of NVCL id strings
         '''
         return [bh['nvcl_id'] for bh in self.borehole_list]
-
 
     def _clean_wfs_resp(self, getfeat_params):
         '''
@@ -772,7 +744,6 @@ class NVCLReader:
             response_str = response.encode('utf-8', 'ignore')
         return response_str
 
-
     def _wfs_getfeature(self):
         response_str = b''
         bhv_list = []
@@ -787,7 +758,7 @@ class NVCLReader:
             # filter_3 = And([filter_, filter_2])
             filterxml = etree.tostring(filter_.toXML()).decode("utf-8")
             try:
-                getfeat_params = { 'typename': 'gsmlp:BoreholeView', 'filter': filterxml }
+                getfeat_params = {'typename': 'gsmlp:BoreholeView', 'filter': filterxml}
                 if self.param_obj.WFS_VERSION != '2.0.0':
                     getfeat_params['srsname'] = self.param_obj.BOREHOLE_CRS
                 response_str = self._clean_wfs_resp(getfeat_params)
@@ -805,9 +776,9 @@ class NVCLReader:
             bhv_list = []
             while not done:
                 try:
-                    getfeat_params = { 'typename':'gsmlp:BoreholeView',
-                                       'maxfeatures': RECORD_INC,
-                                       'startindex': record_cnt}
+                    getfeat_params = {'typename': 'gsmlp:BoreholeView',
+                                      'maxfeatures': RECORD_INC,
+                                      'startindex': record_cnt}
                     # SRS name is not a parameter in v2.0.0
                     LOGGER.debug('_wfs_getfeature(): getfeat_params = %s', repr(getfeat_params))
                     resp_s = self._clean_wfs_resp(getfeat_params)
@@ -817,7 +788,7 @@ class NVCLReader:
                     return bhv_list
                 record_cnt += RECORD_INC
                 root = self._clean_xml_parse(resp_s)
-                bhv_list += [ x for x in root.findall('./*/gsmlp:BoreholeView', NS)]
+                bhv_list += [x for x in root.findall('./*/gsmlp:BoreholeView', NS)]
                 num_ret = root.attrib.get('numberReturned', '0')
                 LOGGER.debug('_wfs_getfeature(): num_ret = %s',  num_ret)
                 LOGGER.debug('record_cnt = %d', record_cnt)
@@ -828,7 +799,6 @@ class NVCLReader:
             LOGGER.error("Cannot have USE_LOCAL_FILTERING and WFS_VERSION < 2.0.0")
             return []
 
-
     def _fetch_borehole_list(self):
         ''' Returns a list of WFS borehole data within bounding box, but only NVCL boreholes
             [ { 'nvcl_id': XXX, 'x': XXX, 'y': XXX, 'href': XXX, ... }, { ... } ]
@@ -838,12 +808,11 @@ class NVCLReader:
         '''
         LOGGER.debug("_fetch_boreholes_list()")
         bhv_list = self._wfs_getfeature()
-        if len(bhv_list)==0:
+        if len(bhv_list) == 0:
             LOGGER.debug('_fetch_boreholes_list(): No response')
             return False
         LOGGER.debug('len(bhv_list) = %d', len(bhv_list))
         LOGGER.debug('bhv_list = %s', repr(bhv_list))
-        borehole_list = []
         borehole_cnt = 0
         record_cnt = 0
 
@@ -854,9 +823,9 @@ class NVCLReader:
             LOGGER.debug('child = %s',  ET.tostring(child))
             # WFS v2.0.0 uses gml32
             if self.param_obj.WFS_VERSION == '2.0.0':
-                id_str = '{'+NS['gml32']+'}id'
+                id_str = '{' + NS['gml32'] + '}id'
             else:
-                id_str = '{'+NS['gml']+'}id'
+                id_str = '{' + NS['gml'] + '}id'
             nvcl_id = child.attrib.get(id_str, '').split('.')[-1:][0]
 
             # Some services don't use a namepace for their id
@@ -881,11 +850,11 @@ class NVCLReader:
 
                 try:
                     if self.param_obj.BOREHOLE_CRS != 'EPSG:4326' or reverse_coords:
-                        borehole_dict['y'] = float(x_y[0]) # lat
-                        borehole_dict['x'] = float(x_y[1]) # lon
+                        borehole_dict['y'] = float(x_y[0])  # lat
+                        borehole_dict['x'] = float(x_y[1])  # lon
                     else:
-                        borehole_dict['x'] = float(x_y[0]) # lon
-                        borehole_dict['y'] = float(x_y[1]) # lat
+                        borehole_dict['x'] = float(x_y[0])  # lon
+                        borehole_dict['y'] = float(x_y[1])  # lat
                 except (OSError, ValueError) as os_exc:
                     LOGGER.warning("Cannot parse collar coordinates %s", str(os_exc))
                     continue
@@ -906,10 +875,12 @@ class NVCLReader:
                     borehole_dict['z'] = 0.0
 
                 LOGGER.debug('borehole_dict = %s', repr(borehole_dict))
-                LOGGER.debug('%s < %s, %s > %s', self.param_obj.BBOX['west'], borehole_dict['x'],
-                                                 self.param_obj.BBOX['east'], borehole_dict['x'])
-                LOGGER.debug('%s > %s, %s < %s', self.param_obj.BBOX['north'], borehole_dict['y'],
-                                                 self.param_obj.BBOX['south'], borehole_dict['y'])
+                LOGGER.debug('%s < %s, %s > %s',
+                             self.param_obj.BBOX['west'], borehole_dict['x'],
+                             self.param_obj.BBOX['east'], borehole_dict['x'])
+                LOGGER.debug('%s > %s, %s < %s',
+                             self.param_obj.BBOX['north'], borehole_dict['y'],
+                             self.param_obj.BBOX['south'], borehole_dict['y'])
 
                 # If POLYGON is set, only accept if within linear ring
                 if hasattr(self.param_obj, 'POLYGON'):
@@ -920,10 +891,10 @@ class NVCLReader:
                         LOGGER.debug("borehole_cnt = %d", borehole_cnt)
 
                 # Else only accept if within bounding box
-                elif self.param_obj.BBOX['west'] < borehole_dict['x'] and \
-                   self.param_obj.BBOX['east'] > borehole_dict['x'] and \
-                   self.param_obj.BBOX['north'] > borehole_dict['y'] and \
-                   self.param_obj.BBOX['south'] < borehole_dict['y']:
+                elif (self.param_obj.BBOX['west'] < borehole_dict['x'] and
+                      self.param_obj.BBOX['east'] > borehole_dict['x'] and
+                      self.param_obj.BBOX['north'] > borehole_dict['y'] and
+                      self.param_obj.BBOX['south'] < borehole_dict['y']):
                     borehole_cnt += 1
                     self.borehole_list.append(borehole_dict)
                     LOGGER.debug("borehole_cnt = %d", borehole_cnt)

@@ -6,7 +6,8 @@ import urllib
 import urllib.parse
 import urllib.request
 from http.client import HTTPException
-import sys, logging
+import sys
+import logging
 
 LOG_LVL = logging.INFO
 ''' Initialise debug level, set to 'logging.INFO' or 'logging.DEBUG'
@@ -50,7 +51,7 @@ class _ServiceInterface:
 
         :param nvcl_id: NVCL 'holeidentifier' parameter, the 'nvcl_id' from each dict item retrieved from
                   'get_boreholes_list()' or 'get_nvcl_id_list()'
-        :param options: optional parameters: 
+        :param options: optional parameters:
 
             * headersOnly: only get dataset headers, this is much faster and can be used in combination with holeidentifier=all to get a list of all datasets efficiently, example value=yes
             * outputformat: change output format from xml, example value=json
@@ -58,10 +59,9 @@ class _ServiceInterface:
         :returns: the response as a byte string or an empty string upon error
         '''
         url = self.NVCL_URL + '/getDatasetCollection.html'
-        params = {'holeidentifier' : nvcl_id}
+        params = {'holeidentifier': nvcl_id}
         params.update(options)
         return self._get_response_str(url, params)
-
 
     def get_mosaic(self, log_id, **options):
         ''' Retrieves images of NVCL core trays
@@ -74,10 +74,9 @@ class _ServiceInterface:
              * endsampleno: the last sample image to be displayed, default value=99999
         '''
         url = self.NVCL_URL + '/mosaic.html'
-        params = {'logid' : log_id}
+        params = {'logid': log_id}
         params.update(options)
         return self._get_response_str(url, params)
-
 
     def get_mosaic_tray_thumbnail(self, dataset_id, log_id, **options):
         ''' Retrieves thumbnail images of NVCL core trays
@@ -91,21 +90,19 @@ class _ServiceInterface:
               * endsampleno: the last sample image to be displayed, default value=99999
         '''
         url = self.NVCL_URL + '/mosaictraythumbnail.html'
-        params = {'datasetid': dataset_id, 'logid' : log_id}
+        params = {'datasetid': dataset_id, 'logid': log_id}
         params.update(options)
         return self._get_response_str(url, params)
-
 
     def get_display_tray_thumb(self, log_id, sample_no):
         ''' Gets thumbnail images of NVCL core trays
 
         :param log_id: obtained through calling the getLogCollection service by specifying URL Parameter mosaicsvc=yes
-        :param sample_no: sample number of the image to retrieve from database  
+        :param sample_no: sample number of the image to retrieve from database
         '''
         url = self.NVCL_URL + '/Display_Tray_Thumb.html'
-        params = {'logid' : log_id, 'sampleno': sample_no}
+        params = {'logid': log_id, 'sampleno': sample_no}
         return self._get_response_str(url, params)
-
 
     def get_image_tray_depth(self, log_id):
         ''' Generates a list of image tray collection with start and end depth values for each image tray.
@@ -113,9 +110,8 @@ class _ServiceInterface:
         :param logid: obtained through calling the getLogCollection service with mosaicsvc set to yes, select the LogId with LogName equal Tray Thumbnail Images or Tray Images
         '''
         url = self.NVCL_URL + '/getImageTrayDepth.html'
-        params = {'logid' : log_id}
+        params = {'logid': log_id}
         return self._get_response_str(url, params)
-
 
     def get_plot_scalar(self, log_id, **options):
         ''' Uses JFeeChart Java chart library to draw a plot of the product and return the plot as an image in PNG format.
@@ -132,10 +128,9 @@ class _ServiceInterface:
                * legend: value= 1 or 0, 1 - indicates to show the legend, 0 to hide it, optional, default to 1
         '''
         url = self.NVCL_URL + '/plotscalar.html'
-        params = {'logid' : log_id}
+        params = {'logid': log_id}
         params.update(options)
         return self._get_response_str(url, params)
-
 
     def get_plot_multi_scalar(self, log_id_list, **options):
         ''' Same as 'get_plot_scalar' above, except that it returns HTML
@@ -159,7 +154,6 @@ class _ServiceInterface:
         params = self._make_multi_logids(log_id_list, options)
         return self._get_response_str(url, params)
 
-
     def download_scalar(self, log_id_list):
         ''' This service enables download of the raw scalar values in csv format
 
@@ -170,7 +164,6 @@ class _ServiceInterface:
         params = self._make_multi_logids(log_id_list)
         return self._get_response_str(url, params)
 
-
     def download_tsg(self, email, dataset_id, **options):
         ''' When triggered, the TSG download Service will prepare TSG files from NVCL database datasets and make them available for download.
 
@@ -178,7 +171,7 @@ class _ServiceInterface:
         :param dataset_id: GUID dataset identifier of the dataset to be prepared (list of datasetid can be obtained through calling the NVCL Data Services getDatasetCollection service)
         :param options: optional parameters:
 
-            * linescan: Prepare linescan imagery with this dataset. Setting this 
+            * linescan: Prepare linescan imagery with this dataset. Setting this
               to 'no' will reduce the size of the download significantly but
               users will not be able to see the highest resolution images.  Default value=yes
             * forcerecreate: Force the service to delete the cached version of
@@ -186,10 +179,9 @@ class _ServiceInterface:
               the dataset or cached version is stale. Default value=no
         '''
         url = self.NVCL_URL + '/downloadtsg.html'
-        params = {'email' : email, 'datasetid': dataset_id}
+        params = {'email': email, 'datasetid': dataset_id}
         params.update(options)
         return self._get_response_str(url, params)
-
 
     def get_download_tsg_status(self, email):
         ''' This service displays the status of past TSG file download requests for users. This service takes a single parameter which is the email address of the user.
@@ -197,8 +189,7 @@ class _ServiceInterface:
         :param email: user's email address to identify the user
         '''
         url = self.NVCL_URL + '/checktsgstatus.html'
-        return self._get_response_str(url, {'email' : email})
-
+        return self._get_response_str(url, {'email': email})
 
     def download_wfs(self, email, borehole_id, options):
         ''' The WFS Download Service will prepare xml datasets from NVCL GeoServer instances and make them available for download.
@@ -214,10 +205,9 @@ class _ServiceInterface:
               the dataset or cached version is stale; default value=no
         '''
         url = self.NVCL_URL + '/downloadwfs.html'
-        params = {'email' : email, 'boreholeid': borehole_id}
+        params = {'email': email, 'boreholeid': borehole_id}
         params.update(options)
         return self._get_response_str(url, params)
-
 
     def download_wfs_status(self, email):
         ''' This service displays the status of past WFS file download requests.
@@ -225,8 +215,7 @@ class _ServiceInterface:
         :param email: user's email address to identify the user
         '''
         url = self.NVCL_URL + '/checkwfsstatus.html'
-        return self._get_response_str(url, {'email' : email})
-
+        return self._get_response_str(url, {'email': email})
 
     def get_log_collection(self, dataset_id, use_mosaic=False):
         ''' Retrieves log details for a particular borehole's dataset
@@ -241,9 +230,8 @@ class _ServiceInterface:
         mosaic_svc = 'no'
         if use_mosaic:
             mosaic_svc = 'yes'
-        params = {'datasetid' : dataset_id, 'mosaicsvc': mosaic_svc}
+        params = {'datasetid': dataset_id, 'mosaicsvc': mosaic_svc}
         return self._get_response_str(url, params)
-
 
     def get_downsampled_data(self, log_id, **options):
         ''' Returns data in downsampled format, to a certain height resolution
@@ -257,10 +245,9 @@ class _ServiceInterface:
             * interval: size of interval to bin or average over
         '''
         url = self.NVCL_URL + '/getDownsampledData.html'
-        params = {'logid' : log_id}
+        params = {'logid': log_id}
         params.update(options)
         return self._get_response_str(url, params)
-
 
     def _get_response_str(self, url, params):
         ''' Performs a GET request with URL and parameters and returns the response as a string
@@ -284,7 +271,6 @@ class _ServiceInterface:
             return ""
         LOGGER.debug("Response[:100]: %s", response_str[:100])
         return response_str
-
 
     def _make_multi_logids(self, log_id_list, options={}):
         ''' Converts a list of log ids to a logids for a HTTP GET request
