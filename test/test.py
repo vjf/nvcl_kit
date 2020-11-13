@@ -199,6 +199,32 @@ class TestNVCLReader(unittest.TestCase):
         self.try_input_param(param_obj, "'NVCL_URL' parameter is not a string")
 
 
+    def test_bad_depth_param(self):
+        ''' Tests that if it has a bad 'DEPTH' parameter it issues a 
+            warning message and returns wfs attribute as None
+        '''
+        for depths, err_str in [(None, "'DEPTHS' parameter is not a tuple"),
+                                (("A","B","C"), "'DEPTHS' parameter does not have length of 2"),
+                                ((0, "5"), "'DEPTHS' parameter does not contain numerics"),
+                                (("0", 5), "'DEPTHS' parameter does not contain numerics"),
+                                ((50,49), "'DEPTHS' parameter minimum is not less then maximum")]:
+            param_obj = SimpleNamespace()
+            param_obj.DEPTHS = depths
+            param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+            self.try_input_param(param_obj, err_str)
+
+
+    def test_bad_use_local_filt_param(self):
+        ''' Tests that if the 'USE_LOCAL_FILTERING' is a bad value it issues a
+            warning message and returns wfs attribute as None
+        '''
+        param_obj = SimpleNamespace()
+        param_obj.NVCL_URL = "https://blah.blah.blah/nvcl/NVCLDataServices"
+        param_obj.USE_LOCAL_FILTERING = "True"
+        param_obj.WFS_URL = "http://blah.blah.blah/nvcl/geoserver/wfs"
+        self.try_input_param(param_obj, "'USE_LOCAL_FILTERING' parameter is not boolean")
+
+
     def wfs_exception_tester(self, mock_wfs, excep, msg):
         ''' Creates an exception in owslib getfeature() read()
             and tests to see that the correct warning message is generated
