@@ -127,12 +127,17 @@ def get_asud_record(lon, lat):
     '''
     strat_no = _get_asud_strat_no(lon, lat)
     if strat_no is not None:
-        resp = post(GSUD_API, data=json.dumps({"actionName": "searchStratigraphicUnitsDetails", "stratNo": strat_no}))
         try:
-            jresp = json.loads(resp.text)
-        except json.decoder.JSONDecodeError as exc:
-            LOGGER.warning("Error decoding ASUD json response: %s", str(exc))
+            resp = post(GSUD_API, data=json.dumps({"actionName": "searchStratigraphicUnitsDetails", "stratNo": strat_no}))
+        except RequestException as exc:
+            LOGGER.error("Error querying Stratigraphic Units DB: %s", str(exc))
             jresp = {"response": None}
+        else:
+            try:
+                jresp = json.loads(resp.text)
+            except json.decoder.JSONDecodeError as exc:
+                LOGGER.warning("Error decoding ASUD json response: %s", str(exc))
+                jresp = {"response": None}
         return(jresp["response"])
     return None
 
