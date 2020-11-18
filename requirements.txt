@@ -3,4 +3,4 @@ shapely
 requests
 pyproj
 geojson
-yaml
+pyyaml
