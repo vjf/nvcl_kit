@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-from nvcl_kit.reader import NVCLReader
-from types import SimpleNamespace
 import sys
+from types import SimpleNamespace
+from nvcl_kit.reader import NVCLReader
+from nvcl_kit.asud import get_asud_record
+import yaml
 
 #
 # A very rough script to demonstrate 'nvcl_kit'
@@ -44,7 +46,19 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
     # Get boreholes list
     bh_list = reader.get_boreholes_list()
     print("len(bh_list) = ", len(bh_list))
-    print("bh_list[:5] = ", bh_list[:5])
+
+    # Print borehole details and Australian Stratigraphic Units Database records
+    for bh in bh_list[:5]:
+        print("\nBOREHOLE:")
+        print(yaml.dump(bh))
+        print("-"*80)
+        a_rec = get_asud_record(bh['x'], bh['y'])
+        print("\nAUSTRALIAN STRATIGRAPHIC UNITS DATABASE RECORD:")
+        if a_rec is not None:
+            print(yaml.dump(a_rec))
+        else:
+            print("Not found")
+        print("="*80)
 
     # Get list of NVCL ids
     nvcl_id_list = reader.get_nvcl_id_list()
