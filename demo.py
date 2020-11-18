@@ -8,7 +8,8 @@ import yaml
 #
 # A very rough script to demonstrate 'nvcl_kit'
 #
-
+# NB: requires 'pyyaml' - install via 'pip3 install pyyaml'
+#
 
 # Provider list. Format is (WFS service URL, NVCL service URL, bounding box coords, local filtering, WFS version, max boreholes))
 prov_list = [ ("http://www.mrt.tas.gov.au:80/web-services/ows", "http://www.mrt.tas.gov.au/NVCLDataServices/", { "west": 143.75, "south": -43.75, "east": 148.75, "north": -39.75 }, False, "1.1.0", 20),
@@ -47,7 +48,7 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
     bh_list = reader.get_boreholes_list()
     print("len(bh_list) = ", len(bh_list))
 
-    # Print borehole details and Australian Stratigraphic Units Database records
+    # Print borehole details and relevant records from Australian Stratigraphic Units Database (https://asud.ga.gov.au/)
     for bh in bh_list[:5]:
         print("\nBOREHOLE:")
         print(yaml.dump(bh))

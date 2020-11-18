@@ -121,11 +121,30 @@ def _get_asud_strat_no(lon, lat):
 def get_asud_record(lon, lat):
     ''' Retrieves a stratigraphy record from the 'Australian Strategraphic Units Database'
 
-    :param lon: longitude
-    :param lat: latitude
+    :param lon: longitude (float or string)
+    :param lat: latitude (float or string)
     :returns: stratigraphy record as a dict or None upon error or not found
     '''
-    strat_no = _get_asud_strat_no(lon, lat)
+    # Check input parameters
+    if not isinstance(lon, float):
+        try:
+            lon_flt = float(lon)
+        except (ValueError, TypeError):
+            LOGGER.warning("lon parameter is not a float")
+            return None
+    else:
+        lon_flt = lon
+
+    if not isinstance(lat, float):
+        try:
+            lat_flt = float(lat)
+        except (ValueError, TypeError):
+            LOGGER.warning("lat parameter is not a float")
+            return None
+    else:
+        lat_flt = lat
+
+    strat_no = _get_asud_strat_no(lon_flt, lat_flt)
     if strat_no is not None:
         try:
             resp = post(GSUD_API, data=json.dumps({"actionName": "searchStratigraphicUnitsDetails", "stratNo": strat_no}))
