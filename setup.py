@@ -12,7 +12,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup_info = dict(
     name="nvcl_kit",
-    version="0.1.30",
+    version="0.1.31",
     description="Downloads Australian NVCL datasets",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -33,7 +33,7 @@ setup_info = dict(
     ],
     packages=setuptools.find_packages(),
     python_requires='>=3.5',
-    install_requires=['OWSLib<0.23.0','shapely', 'requests','pyproj','geojson']
+    install_requires=['OWSLib==0.22.0','shapely', 'requests','pyproj','geojson']
 )
 
 
