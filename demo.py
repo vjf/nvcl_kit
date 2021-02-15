@@ -6,9 +6,19 @@ from nvcl_kit.asud import get_asud_record
 import yaml
 
 #
-# A very rough script to demonstrate 'nvcl_kit'
+# A very rough script to demonstrate 'nvcl_kit' 
 #
-# NB: requires 'pyyaml' - install via 'pip3 install pyyaml'
+# Linux command line instructions:
+#
+# git clone https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit.git
+# cd nvcl_kit
+# mkdir venv
+# python3 -m venv ./venv
+# . ./venv/bin/activate
+# pip install -U pip
+# pip install -r requirements.txt
+# ./demo.py
+#
 #
 
 # Provider list. Format is (WFS service URL, NVCL service URL, bounding box coords, local filtering, WFS version, max boreholes))

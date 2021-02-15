@@ -1,4 +1,4 @@
-OWSLib
+OWSLib==0.22.0
 shapely
 requests
 pyproj
