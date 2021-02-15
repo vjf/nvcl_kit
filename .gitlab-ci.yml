@@ -64,7 +64,7 @@ deploy:
     - pip3 install twine
     - echo "$PYPI_CONFIG" > "/root/.pypirc"
     - python3 setup.py sdist bdist_wheel
-    - twine upload --repository nexus dist/*.whl
+    # - twine upload --repository nexus dist/*.whl
     - twine upload --repository pypi dist/*
   only:
     - tags
