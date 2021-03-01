@@ -157,7 +157,7 @@ def get_asud_record(lon, lat):
             except json.decoder.JSONDecodeError as exc:
                 LOGGER.warning("Error decoding ASUD json response: %s", str(exc))
                 jresp = {"response": None}
-        return(jresp["response"])
+        return jresp.get("response")
     return None
 
 
