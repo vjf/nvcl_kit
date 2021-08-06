@@ -776,3 +776,12 @@ class TestNVCLReader(unittest.TestCase):
         self.assertEqual(log_list[0].log_id, 'b80a98e4-6d9b-4a58-ab04-d105c172e67')
         self.assertEqual(log_list[0].log_name, 'Imagery')
         self.assertEqual(log_list[0].sample_count, 30954)
+
+
+    def test_get_algorithms(self):
+        alg_dict = self.setup_urlopen('get_algorithms', {}, 'algorithms.txt')
+        self.assertEqual(alg_dict['82'],'703')
+        self.assertEqual(alg_dict['6'],'500')
+        self.assertEqual(alg_dict['149'],'708')
+        
+

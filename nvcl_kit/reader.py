@@ -604,6 +604,25 @@ class NVCLReader:
         # NB: Service only plots the first 6 log ids
         return self.svc.get_plot_multi_scalar(log_id_list[:6], **options)
 
+    def get_algorithms(self):
+        ''' Gets a dict of algorithm output ids and their versions
+
+        :return: a dict of { 'algorithmOutputId1': 'version1', 'algorithmOutputId2': 'version2', ... }
+        '''
+        alg_str = self.svc.get_algorithms()
+        try:
+            xml_tree = ET.fromstring(alg_str)
+            algver_dict = {}
+            for alg in xml_tree.findall('algorithms/outputs/versions'):
+                alg_id = alg.find('algorithmoutputID')
+                ver = alg.find('version')
+                if alg_id is not None and ver is not None:
+                    algver_dict[alg_id.text] = ver.text
+        except ET.ParseError as pe_exc:
+            LOGGER.debug(f"get_algorithms() failed to parse response: {pe_exc}")
+            return {}
+        return algver_dict
+
     def get_imagelog_data(self, nvcl_id):
         ''' Retrieves a set of image log data for a particular borehole
 
@@ -735,7 +754,10 @@ class NVCLReader:
         :param getfeat_params: dict of parameters for WFS GetFeature request
         :return: byte string response
         '''
+        
+        LOGGER.debug("_clean_wfs_resp(params=%s)", str(getfeat_params))
         response = self.wfs.getfeature(**getfeat_params).read()
+        LOGGER.debug("_clean_wfs_resp(): response=%s", repr(response))
         if not type(response) in [bytes, str]:
             response_str = b""
         elif type(response) == bytes:
@@ -752,11 +774,11 @@ class NVCLReader:
             # FIXME: Can't filter for BBOX and nvclCollection==true at the same time
             # [owslib's BBox uses 'ows:BoundingBox', not supported in WFS]
             # so is best to do the BBOX manually
-            filter_ = PropertyIsLike(propertyname='gsmlp:nvclCollection', literal='true', matchCase=False)
+            filter_prop = PropertyIsLike(propertyname='gsmlp:nvclCollection', literal='true', matchCase=False)
             # filter_2 = BBox([self.param_obj.BBOX['west'], self.param_obj.BBOX['south'], self.param_obj.BBOX['east'],
             #              self.param_obj.BBOX['north']], crs=self.param_obj.BOREHOLE_CRS)
             # filter_3 = And([filter_, filter_2])
-            filterxml = etree.tostring(filter_.toXML()).decode("utf-8")
+            filterxml = etree.tostring(filter_prop.toXML()).decode("utf-8")
             try:
                 getfeat_params = {'typename': 'gsmlp:BoreholeView', 'filter': filterxml}
                 if self.param_obj.WFS_VERSION != '2.0.0':
@@ -784,7 +806,7 @@ class NVCLReader:
                     resp_s = self._clean_wfs_resp(getfeat_params)
                     LOGGER.debug('_wfs_getfeature(): resp_s = %s', resp_s)
                 except (RequestException, HTTPException, ServiceException, OSError) as exc:
-                    LOGGER.warning("WFS GetFeature failed, filter=%s: %s", filterxml, str(exc))
+                    LOGGER.warning(f"WFS GetFeature failed: {exc}")
                     return bhv_list
                 record_cnt += RECORD_INC
                 root = self._clean_xml_parse(resp_s)
@@ -849,10 +871,14 @@ class NVCLReader:
                 LOGGER.debug('x_y = %s', repr(x_y))
 
                 try:
-                    if self.param_obj.BOREHOLE_CRS != 'EPSG:4326' or reverse_coords:
+                    # See https://docs.geoserver.org/latest/en/user/services/wfs/axis_order.html#wfs-basics-axis
+                    if self.param_obj.BOREHOLE_CRS != 'EPSG:4326' or \
+                           reverse_coords:
+                        # latitude/longitude or y,x order
                         borehole_dict['y'] = float(x_y[0])  # lat
                         borehole_dict['x'] = float(x_y[1])  # lon
                     else:
+                        # longitude/latitude or x,y order
                         borehole_dict['x'] = float(x_y[0])  # lon
                         borehole_dict['y'] = float(x_y[1])  # lat
                 except (OSError, ValueError) as os_exc:
@@ -874,7 +900,8 @@ class NVCLReader:
                 except ValueError:
                     borehole_dict['z'] = 0.0
 
-                LOGGER.debug('borehole_dict = %s', repr(borehole_dict))
+                LOGGER.debug(f"borehole_dict = {repr(borehole_dict)}")
+                LOGGER.debug(f"BBOX={self.param_obj.BBOX}")
                 LOGGER.debug('%s < %s, %s > %s',
                              self.param_obj.BBOX['west'], borehole_dict['x'],
                              self.param_obj.BBOX['east'], borehole_dict['x'])

@@ -46,6 +46,12 @@ class _ServiceInterface:
         self.NVCL_URL = nvcl_url
         self.TIMEOUT = timeout
 
+    def get_algorithms(self):
+        ''' Retrieves a list of algorithms and their output ids
+        '''
+        url = self.NVCL_URL + '/getAlgorithms.html'
+        return self._get_response_str(url)
+
     def get_dataset_collection(self, nvcl_id, **options):
         ''' Retrieves a dataset for a particular borehole
 
@@ -249,27 +255,29 @@ class _ServiceInterface:
         params.update(options)
         return self._get_response_str(url, params)
 
-    def _get_response_str(self, url, params):
+    def _get_response_str(self, url, params = None):
         ''' Performs a GET request with URL and parameters and returns the response as a string
 
         :param url: URL of request, string
         :param params: parameters, in dictionary form
         :return: response, string; returns an empty string upon error
         '''
-        enc_params = urllib.parse.urlencode(params).encode('ascii')
-        req = urllib.request.Request(url, enc_params)
-        LOGGER.debug("Sending: %s, %s", url, enc_params)
+        enc_params = None
+        if params is not None:
+            enc_params = urllib.parse.urlencode(params).encode('ascii')
+        req = urllib.request.Request(url, data=enc_params)
+        LOGGER.debug(f"Sending: {url}, {enc_params}")
         response_str = b''
         try:
             with urllib.request.urlopen(req, timeout=self.TIMEOUT) as response:
                 response_str = response.read()
         except HTTPException as he_exc:
-            LOGGER.warning('HTTP Error: %s', str(he_exc))
+            LOGGER.warning(f"HTTP Error: {he_exc}")
             return ""
         except OSError as os_exc:
-            LOGGER.warning('OS Error: %s', str(os_exc))
+            LOGGER.warning(f"OS Error: {os_exc}")
             return ""
-        LOGGER.debug("Response[:100]: %s", response_str[:100])
+        LOGGER.debug(f"Response[:100]: {response_str[:100]}")
         return response_str
 
     def _make_multi_logids(self, log_id_list, options={}):
