@@ -72,7 +72,7 @@ def _get_asud_strat_no(lon, lat):
     # Connect to WMS service
     try:
         wms = WebMapService(url=GA_SURF_GEO_WMS, version='1.3.0')
-    except RequestException as exc:
+    except Exception as exc:
         LOGGER.warning("Cannot connect to WMS service: %s", str(exc))
         return None
 
