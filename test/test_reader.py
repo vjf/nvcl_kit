@@ -462,10 +462,9 @@ class TestNVCLReader(unittest.TestCase):
             open_obj = mock_request.return_value
             with open(src_file) as fp:
                 if not binary:
-                    mode = 'ascii'
+                    open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
                 else:
-                    mode = 'utf-8'
-                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), mode)
+                    open_obj.__enter__.return_value.read.return_value = fp.read()
                 ret_list = getattr(rdr, fn)(**params)
         return ret_list
    
@@ -682,7 +681,9 @@ class TestNVCLReader(unittest.TestCase):
         ''' Tests get_spectrallog_datasets()
         '''
         spectral_dataset = self.setup_urlopen('get_spectrallog_datasets', {'log_id':"blah"}, 'spectraldata', binary=True)
-        self.assertEqual(spectral_dataset[:3], b'\xc2\x81 ')
+        self.assertEqual(ord(spectral_dataset[0]), 129)
+        self.assertEqual(ord(spectral_dataset[1]), 32)
+        self.assertEqual(ord(spectral_dataset[2]), 206)
 
 
     def test_spectrallog_datasets_exception(self):
