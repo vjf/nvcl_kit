@@ -460,10 +460,11 @@ class TestNVCLReader(unittest.TestCase):
         ret_list = []
         with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
-            with open(src_file) as fp:
-                if not binary:
+            if not binary:
+                with open(src_file 'r') as fp:
                     open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
-                else:
+            else:
+                with open(src_file, 'rb') as fp:
                     open_obj.__enter__.return_value.read.return_value = fp.read()
                 ret_list = getattr(rdr, fn)(**params)
         return ret_list
