@@ -239,6 +239,20 @@ class _ServiceInterface:
         params = {'datasetid': dataset_id, 'mosaicsvc': mosaic_svc}
         return self._get_response_str(url, params)
 
+    def get_spectral_data(self, spec_log_id, **options):
+        ''' Fetches binary spectral data
+
+        :param spec_log_id: spectral log id
+        :param optional parameters:
+
+            * startsampleno: starting sample number
+            * endsampleno: ending sample number
+        '''
+        url = self.NVCL_URL + '/getspectraldata.html'
+        params = {'speclogid': spec_log_id}
+        params.update(options)
+        return self._get_response_str(url, params)
+
     def get_downsampled_data(self, log_id, **options):
         ''' Returns data in downsampled format, to a certain height resolution
 

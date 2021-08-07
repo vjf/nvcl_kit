@@ -688,6 +688,21 @@ class NVCLReader:
                                               wavelengths=wv_list))
         return logid_list
 
+    def get_spectrallog_datasets(self, log_id, **options):
+        ''' Retrieves spectral log datasets as a binary string
+
+        :param log_id: obtained through calling 'get_spectrallog_data()'
+        :param start_sample_no: retrieve sample numbers starting from this string e.g. '0'
+        :param end_sample_no: retrieve sample numbers ending with this string e.g. '2'
+        :returns: a binary text string
+        '''
+        in_opts = {}
+        if 'start_sample_no' in options:
+            in_opts.update({ 'startsampleno': options['start_sample_no']})
+        if 'end_sample_no' in options:
+            in_opts.update({ 'endsampleno': options['end_sample_no']})
+        return self.svc.get_spectral_data(log_id, **in_opts)
+
     def get_profilometer_data(self, nvcl_id):
         ''' Retrieves a set of profilometer logs for a particular borehole
 

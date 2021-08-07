@@ -21,19 +21,19 @@ import yaml
 #
 #
 
-# Provider list. Format is (WFS service URL, NVCL service URL, bounding box coords, local filtering, WFS version, max boreholes))
-prov_list = [ ("http://www.mrt.tas.gov.au:80/web-services/ows", "http://www.mrt.tas.gov.au/NVCLDataServices/", { "west": 143.75, "south": -43.75, "east": 148.75, "north": -39.75 }, False, "1.1.0", 20),
-              ("http://geology.data.vic.gov.au/nvcl/ows", "http://geology.data.vic.gov.au/NVCLDataServices", None, False, "1.1.0", 20),
-              ("https://gs.geoscience.nsw.gov.au/geoserver/ows", "https://nvcl.geoscience.nsw.gov.au/NVCLDataServices", None, False, "1.1.0", 20),
-              ("https://geology.information.qld.gov.au/geoserver/ows", "https://geology.information.qld.gov.au/NVCLDataServices", None, False, "1.1.0", 20),
-              ("http://geology.data.nt.gov.au:80/geoserver/ows", "http://geology.data.nt.gov.au:80/NVCLDataServices", None, True, "2.0.0", 20),
-              ("https://sarigdata.pir.sa.gov.au/geoserver/ows", "https://sarigdata.pir.sa.gov.au/nvcl/NVCLDataServices",None, False, "1.1.0", 20),
-              # NB: Western Australia's DMIRS only supports WFS v2.0.0
-              ("http://geossdi.dmp.wa.gov.au/services/ows",  "http://geossdi.dmp.wa.gov.au/NVCLDataServices", None, False, "2.0.0", 20)
+# Provider list. Format is (WFS service URL, NVCL service URL, bounding box coords, borehole crs, local filtering, WFS version, max boreholes))
+prov_list = [ ("https://www.mrt.tas.gov.au/web-services/ows", "https://www.mrt.tas.gov.au/NVCLDataServices/", { "west": 143.75, "south": -43.75, "east": 148.75, "north": -39.75 }, None, False, "1.1.0", 20),
+              ("https://geology.data.vic.gov.au/nvcl/ows", "https://geology.data.vic.gov.au/NVCLDataServices/", { "south": 100100, "north": 315000, "west": 5720750, "east": 6093000 }, "EPSG:28355", False, "1.1.0", 20),
+             ("https://gs.geoscience.nsw.gov.au/geoserver/ows", "https://nvcl.geoscience.nsw.gov.au/NVCLDataServices/", None, None, False, "1.1.0", 20),
+             ("https://geology.information.qld.gov.au/geoserver/ows", "https://geology.information.qld.gov.au/NVCLDataServices/", None, None, False, "1.1.0", 20),
+             ("http://geology.data.nt.gov.au/geoserver/ows", "http://geology.data.nt.gov.au/NVCLDataServices/", None, None, True, "2.0.0", 20),
+             ("https://sarigdata.pir.sa.gov.au/geoserver/ows", "https://sarigdata.pir.sa.gov.au/nvcl/NVCLDataServices/",None, None, False, "1.1.0", 20),
+             # NB: Western Australia's DMIRS only supports WFS v2.0.0
+             ("https://geossdi.dmp.wa.gov.au/services/ows",  "https://geossdi.dmp.wa.gov.au/NVCLDataServices/", None, None, False, "2.0.0", 20)
 ]
 
 
-def do_demo(wfs, nvcl, bbox, local_filt, version, max):
+def do_demo(wfs, nvcl, bbox, borehole_crs, local_filt, version, max):
     print("\n\n***", wfs, "***\n")
 
     # Assemble parameters
@@ -43,8 +43,11 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
     param.WFS_URL = wfs
     param.WFS_VERSION = version
     param.NVCL_URL = nvcl
-    if bbox:
+    if bbox is not None:
         param.BBOX= bbox
+    if borehole_crs is not None:
+        param.BOREHOLE_CRS = borehole_crs
+
     param.MAX_BOREHOLES = max
 
     # Initialise reader
@@ -123,17 +126,6 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
                       meas.classCount, meas.classText, meas.colour))
                 print()
 
-    print('get_spectrallog_data()')
-    spectrallog_data_list = reader.get_spectrallog_data(nvcl_id)
-    for sld in spectrallog_data_list[:4]:
-        print(sld.log_id,
-              sld.log_name,
-              sld.wavelength_units,
-              sld.sample_count,
-              sld.script,
-              sld.script_raw,
-              sld.wavelengths)
-
     print('get_profilometer_data()')
     profilometer_data_list = reader.get_profilometer_data(nvcl_id)
     for pdl in profilometer_data_list[:10]:
@@ -167,7 +159,7 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
                   img_log.log_name,
                   img_log.sample_count)
             html = reader.get_mosaic_image(img_log.log_id)
-            print('get_mosaic_image()', html[:400])
+            print('get_mosaic_image()', repr(html[:4000]))
 
 
         # GET_TRAY_THUMBNAIL_IMGLOGS, GET_TRAY_THUMB_HTML, GET_TRAY_THUMB_JPG
@@ -205,7 +197,6 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
                 print(depth.sample_no,
                       depth.start_value,
                       depth.end_value)
-
 
         # GET_IMAGERY_IMGLOGS
         print('get_imagery_imglogs()')
@@ -249,6 +240,25 @@ def do_demo(wfs, nvcl, bbox, local_filt, version, max):
                                                      enddepth=2000,
                                                      interval=100)
             print('get_sampled_scalar_data()', sampled_data[:400])
+
+    # GET_SPECTRAL_DATA
+    print('get_spectrallog_data()')
+    spectrallog_data_list = reader.get_spectrallog_data(nvcl_id)
+    for sld in spectrallog_data_list[:2]:
+        print(sld.log_id,
+              sld.log_name,
+              sld.wavelength_units,
+              sld.sample_count,
+              sld.script,
+              sld.script_raw,
+              sld.wavelengths)
+
+    # GET_SPECTRAL_DATASETS
+    log_id_list = [sld.log_id for sld in spectrallog_data_list][:10]
+    for sl_log in log_id_list:
+             sl_bin = reader.get_spectrallog_datasets(sl_log, start_sample_no="0", end_sample_no="2")
+             print('get_spectral_datasets()', repr(sl_bin)[:50])
+
 
 
 #

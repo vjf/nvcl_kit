@@ -13,6 +13,16 @@ from nvcl_kit.reader import NVCLReader
 
 MAX_BOREHOLES = 20
 
+'''
+To run this from the command line to test code in local repo:
+
+$ export PYTHONPATH=$HOME/gitlab/nvcl_kit
+$ python -m unittest test_reader.py
+
+or use 'tox' to test the packaged 'pypi' version 
+
+'''
+
 class TestNVCLReader(unittest.TestCase):
 
 
@@ -438,7 +448,7 @@ class TestNVCLReader(unittest.TestCase):
         return rdr 
 
 
-    def setup_urlopen(self, fn, params, src_file):
+    def setup_urlopen(self, fn, params, src_file, binary=False):
         ''' Patches over 'urlopen()' call and calls a function with parameters
 
         :param fn: function to call
@@ -451,7 +461,11 @@ class TestNVCLReader(unittest.TestCase):
         with unittest.mock.patch('urllib.request.urlopen', autospec=True) as mock_request:
             open_obj = mock_request.return_value
             with open(src_file) as fp:
-                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), 'ascii')
+                if not binary:
+                    mode = 'ascii'
+                else:
+                    mode = 'utf-8'
+                open_obj.__enter__.return_value.read.return_value = bytes(fp.read(), mode)
                 ret_list = getattr(rdr, fn)(**params)
         return ret_list
    
@@ -641,7 +655,6 @@ class TestNVCLReader(unittest.TestCase):
         self.urllib_exception_tester(OSError, rdr.get_dataset_list, 'OS Error:', {'nvcl_id':'dummy-id'})
 
 
-        
     def test_spectrallog_data(self):
         ''' Test get_spectrallog_data()
         '''
@@ -663,6 +676,21 @@ class TestNVCLReader(unittest.TestCase):
         rdr = self.setup_reader()
         self.urllib_exception_tester(HTTPException, rdr.get_spectrallog_data, 'HTTP Error:', {'nvcl_id':'dummy-id'})
         self.urllib_exception_tester(OSError, rdr.get_spectrallog_data, 'OS Error:', {'nvcl_id':'dummy-id'})
+
+
+    def test_spectrallog_datasets(self):
+        ''' Tests get_spectrallog_datasets()
+        '''
+        spectral_dataset = self.setup_urlopen('get_spectrallog_datasets', {'log_id':"blah"}, 'spectraldata', binary=True)
+        self.assertEqual(spectral_dataset[:3], b'\xc2\x81 ')
+
+
+    def test_spectrallog_datasets_exception(self):
+        ''' Tests exception handling in get_spectrallog_datasets()
+        '''
+        rdr = self.setup_reader()
+        self.urllib_exception_tester(HTTPException, rdr.get_spectrallog_datasets, 'HTTP Error:', {'log_id':'dummy-id'})
+        self.urllib_exception_tester(OSError, rdr.get_spectrallog_datasets, 'OS Error:', {'log_id':'dummy-id'})
 
 
     def test_borehole_data(self):
@@ -784,4 +812,11 @@ class TestNVCLReader(unittest.TestCase):
         self.assertEqual(alg_dict['6'],'500')
         self.assertEqual(alg_dict['149'],'708')
         
+    def test_get_algorithms_exception(self):
+        ''' Tests exception handling in get_algorithms()
+        '''
+        rdr = self.setup_reader()
+        self.urllib_exception_tester(HTTPException, rdr.get_algorithms, 'HTTP Error:', {})
+        self.urllib_exception_tester(OSError, rdr.get_algorithms, 'OS Error:', {})
+
 
