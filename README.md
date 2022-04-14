@@ -1,3 +1,6 @@
+# This project has been archived. The newer version is here: https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit
+# 
+
 # nvcl_kit: A simple module used to read Australian NVCL borehole data
 
 [![pipeline status](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/badges/master/pipeline.svg)](https://gitlab.com/csiro-geoanalytics/python-shared/nvcl_kit/commits/master)
